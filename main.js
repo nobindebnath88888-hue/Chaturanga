@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
 import ChaturajiEngine from "./engines/chaturajiEngine.js";
-import renderBoard from "./ui/chessBoard.js";
+import renderBoard from "./ui/chessBoard.js"; 
 
 // Firebase config
 const firebaseConfig = {
