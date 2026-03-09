@@ -1,6 +1,5 @@
-// main.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
 import ChaturajiEngine from "./engines/chaturajiEngine.js";
 import renderBoard from "./ui/chessBoard.js";
 
@@ -11,35 +10,36 @@ const firebaseConfig = {
   projectId: "chaturanga-25b8c",
   storageBucket: "chaturanga-25b8c.firebasestorage.app",
   messagingSenderId: "221727464973",
-  appId: "1:221727464973:web:f27ad5643380b2718e7f44",
+  appId: "1:2217274643380b2718e7f44",
   measurementId: "G-035NB3F386"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const engine = new ChaturajiEngine();
 
-// Create a room
+// Create or join room
 const roomID = prompt("Enter room ID to create/join:");
 const roomRef = ref(db, `rooms/${roomID}`);
-
-// Initialize room if first
 set(roomRef, { gameState: engine.getGameState() });
 
-// Listen for updates
-onValue(roomRef, snapshot => {
-  const data = snapshot.val();
-  if (data) renderBoard(data.gameState);
-});
-
-// Move piece example: click simulation
-window.movePiece = function(pieceIndex, newX, newY) {
+// Function to handle moves
+function handleMove(piece, newX, newY) {
   try {
-    const piece = engine.pieces[pieceIndex];
+    // Only allow move if piece color matches current player
+    if (piece.color !== engine.getCurrentPlayer().color) return;
+
     engine.movePiece(piece, newX, newY);
     set(roomRef, { gameState: engine.getGameState() });
   } catch (err) {
     console.log("Move error:", err);
   }
-};
+}
+
+// Listen for Firebase updates
+onValue(roomRef, snapshot => {
+  const data = snapshot.val();
+  if (data) renderBoard(data.gameState, handleMove);
+});
