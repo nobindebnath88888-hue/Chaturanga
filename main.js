@@ -14,61 +14,49 @@ const firebaseConfig = {
   measurementId: "G-035NB3F386"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const engine = new ChaturajiEngine();
 
 let playerColor = null;
 let roomID = null;
 
-// HTML elements
+// DOM Elements
 const joinBtn = document.getElementById("joinBtn");
 const resetBtn = document.getElementById("resetBtn");
-const chatDiv = document.getElementById("chat");
+const chatDiv = document.getElementById("chat-messages");
 const chatInput = document.getElementById("chatInput");
 const sendChat = document.getElementById("sendChat");
-const boardDiv = document.getElementById("board");
+const moveList = document.getElementById("move-list");
 
-// Join room button
-joinBtn.addEventListener("click", async () => {
-  roomID = prompt("Enter room ID to join:");
+// Join Room
+joinBtn.addEventListener("click", () => {
+  roomID = prompt("Enter Room ID:");
   const roomRef = ref(db, `rooms/${roomID}`);
 
-  // Assign player a color automatically
+  // Assign player color
   onValue(roomRef, snapshot => {
     const room = snapshot.val() || { players: {}, gameState: engine.getGameState(), chat: {} };
-    
-    const colors = ["red", "blue", "green", "yellow"];
+    const colors = ["red","blue","green","yellow"];
+
     if (!playerColor) {
-      for (const color of colors) {
-        if (!room.players[color]) {
-          playerColor = color;
-          break;
-        }
+      for (const c of colors) {
+        if (!room.players[c]) { playerColor = c; break; }
       }
-      if (!playerColor) alert("Room full (4 players max)");
+      if (!playerColor) return alert("Room full!");
     }
 
-    if (playerColor) {
-      room.players[playerColor] = { name: `Player-${playerColor}`, color: playerColor };
-      set(ref(db, `rooms/${roomID}/players`), room.players);
-    }
+    room.players[playerColor] = { name: `Player-${playerColor}`, color: playerColor };
+    set(ref(db, `rooms/${roomID}/players`), room.players);
 
-    // Initialize gameState if first player
-    if (!room.gameState) {
-      set(ref(db, `rooms/${roomID}/gameState`), engine.getGameState());
-    }
+    if (!room.gameState) set(ref(db, `rooms/${roomID}/gameState`), engine.getGameState());
 
-    // Render board
     renderBoard(room.gameState, handleMove);
-    
-    // Render chat
     renderChat(room.chat || {});
-  }, { onlyOnce: false });
+    renderMoveList(room.gameState);
+  });
 
-  // Listen for chat updates
+  // Listen to chat updates
   const chatRef = ref(db, `rooms/${roomID}/chat`);
   onValue(chatRef, snapshot => {
     const chatData = snapshot.val() || {};
@@ -76,7 +64,7 @@ joinBtn.addEventListener("click", async () => {
   });
 });
 
-// Reset button
+// Reset Game
 resetBtn.addEventListener("click", () => {
   if (!roomID) return;
   engine.pieces = engine.constructor().pieces;
@@ -94,27 +82,35 @@ sendChat.addEventListener("click", () => {
   chatInput.value = "";
 });
 
-// Handle piece move
+// Handle Moves
 function handleMove(piece, newX, newY) {
-  if (!playerColor) return;
-  if (piece.color !== playerColor) return;
-
+  if (!playerColor || piece.color !== playerColor) return;
   try {
     engine.movePiece(piece, newX, newY);
     set(ref(db, `rooms/${roomID}/gameState`), engine.getGameState());
-  } catch (err) {
-    console.log("Move error:", err);
-  }
+    renderMoveList(engine.getGameState());
+  } catch (err) { console.log("Move error:", err); }
 }
 
 // Render chat messages
 function renderChat(chatData) {
   chatDiv.innerHTML = "";
-  Object.keys(chatData).forEach(key => {
-    const msg = chatData[key];
+  Object.keys(chatData).forEach(k => {
+    const msg = chatData[k];
     const msgDiv = document.createElement("div");
+    msgDiv.className = "chat-msg";
     msgDiv.textContent = `${msg.player}: ${msg.message}`;
     chatDiv.appendChild(msgDiv);
   });
   chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+// Render move history
+function renderMoveList(gameState) {
+  moveList.innerHTML = "";
+  gameState.pieces.forEach(p => {
+    const div = document.createElement("div");
+    div.textContent = `${p.color} ${p.type} at (${p.x},${p.y})`;
+    moveList.appendChild(div);
+  });
 }
