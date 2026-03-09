@@ -4,18 +4,31 @@
   <meta charset="UTF-8">
   <title>Chaturaji Multiplayer</title>
   <style>
-    body { font-family: sans-serif; }
-    #board { display: grid; grid-template-columns: repeat(8, 60px); gap: 2px; }
-    .cell { width: 60px; height: 60px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    body { font-family: sans-serif; margin: 20px; }
+    #board { display: grid; grid-template-columns: repeat(8, 60px); gap: 2px; margin-bottom: 10px; }
+    .cell { width: 60px; height: 60px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
     .red { background-color: #ffcccc; }
     .blue { background-color: #cce0ff; }
     .green { background-color: #ccffcc; }
     .yellow { background-color: #ffffcc; }
+    #chat { width: 500px; height: 200px; border: 1px solid #333; overflow-y: scroll; margin-bottom: 5px; padding: 5px; }
+    #chatInput { width: 400px; }
   </style>
 </head>
 <body>
   <h1>Chaturaji Multiplayer</h1>
+  
+  <div>
+    <button id="joinBtn">Join Room</button>
+    <button id="resetBtn">Reset Game</button>
+  </div>
+  
   <div id="board"></div>
+  
+  <div id="chat"></div>
+  <input type="text" id="chatInput" placeholder="Type a message">
+  <button id="sendChat">Send</button>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>
