@@ -3,31 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <title>Chaturaji Multiplayer</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    #board { display: grid; grid-template-columns: repeat(8, 60px); gap: 2px; margin-bottom: 10px; }
-    .cell { width: 60px; height: 60px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
-    .red { background-color: #ffcccc; }
-    .blue { background-color: #cce0ff; }
-    .green { background-color: #ccffcc; }
-    .yellow { background-color: #ffffcc; }
-    #chat { width: 500px; height: 200px; border: 1px solid #333; overflow-y: scroll; margin-bottom: 5px; padding: 5px; }
-    #chatInput { width: 400px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <h1>Chaturaji Multiplayer</h1>
-  
-  <div>
-    <button id="joinBtn">Join Room</button>
-    <button id="resetBtn">Reset Game</button>
+<body class="dark-mode">
+  <div class="container">
+    <h1>Chaturaji Multiplayer</h1>
+
+    <div class="controls">
+      <button id="joinBtn">Join Room</button>
+      <button id="resetBtn">Reset Game</button>
+    </div>
+
+    <div class="game-layout">
+      <!-- Chessboard -->
+      <div id="board"></div>
+
+      <!-- Sidebar for chat + history -->
+      <div class="sidebar-container">
+        <div class="history-section">
+          <h3 style="padding:10px;">Move History</h3>
+          <div id="move-list"></div>
+        </div>
+        <div class="chat-section">
+          <h3 style="padding:10px;">Chat</h3>
+          <div id="chat-messages"></div>
+          <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button id="sendChat">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  
-  <div id="board"></div>
-  
-  <div id="chat"></div>
-  <input type="text" id="chatInput" placeholder="Type a message">
-  <button id="sendChat">Send</button>
 
   <script type="module" src="main.js"></script>
 </body>
