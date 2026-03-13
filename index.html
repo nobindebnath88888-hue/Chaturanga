@@ -1,41 +1,1831 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chaturaji Multiplayer</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Chaturaji — Four Player Chess</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#0a1628;background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(26,51,96,.55) 0%,transparent 60%);font-family:'Crimson Text',serif;color:#e8d5a0}
+.screen{display:none;width:100vw;height:100vh}
+.screen.active{display:flex}
+#ls{align-items:center;justify-content:center}
+.lw{display:flex;flex-direction:column;align-items:center;gap:24px;padding:20px}
+.crown{font-size:56px;text-align:center;filter:drop-shadow(0 0 18px rgba(212,160,23,.65));animation:fl 3s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.gtitle{font-family:'Cinzel',serif;font-size:clamp(28px,5vw,52px);font-weight:900;letter-spacing:.16em;background:linear-gradient(135deg,#b8860b,#f0c040,#ffe680,#b8860b);background-size:300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sh 4s ease infinite;text-align:center}
+@keyframes sh{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+.gsub{font-style:italic;font-size:15px;color:#9080a0;text-align:center;margin-top:3px}
+.lcard{background:rgba(8,14,30,.97);border:1px solid rgba(180,140,50,.28);border-radius:16px;padding:28px;width:min(440px,92vw);display:flex;flex-direction:column;gap:15px;box-shadow:0 0 60px rgba(0,0,0,.75)}
+input[type=text]{width:100%;background:rgba(255,255,255,.05);border:1px solid #1e3a6e;border-radius:7px;color:#e8d5a0;font-family:'Cinzel',serif;font-size:13px;padding:10px 13px;outline:none;transition:border-color .2s}
+input[type=text]::placeholder{color:#506080;font-family:'Crimson Text',serif;font-style:italic}
+input[type=text]:focus{border-color:#b8860b;box-shadow:0 0 10px rgba(180,140,50,.2)}
+.lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.14em;color:#7080a0;text-transform:uppercase}
+.ccs{display:flex;gap:8px}
+.cc{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:8px 5px;border-radius:8px;border:2px solid transparent;transition:all .2s;flex:1}
+.cc:hover{background:rgba(255,255,255,.06)}
+.cc.sel{border-color:var(--c);background:rgba(255,255,255,.09)}
+.csw{width:28px;height:28px;border-radius:50%;background:var(--c);border:2px solid rgba(255,255,255,.22)}
+.cc span{font-family:'Cinzel',serif;font-size:10px;color:#7080a0}
+.tbox{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border-radius:7px;padding:9px;border:1px solid rgba(255,255,255,.07)}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tl{font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.09em}
+.ta .tl{color:#e05050}.tb2 .tl{color:#40b060}
+.tm{font-size:11px;color:#506080;font-style:italic}
+.vsd{font-family:'Cinzel',serif;font-size:15px;font-weight:900;color:#b8860b}
+.rsec{display:flex;gap:8px}.rsec input{flex:1}
+.btn{background:linear-gradient(135deg,#7d5a00,#b8860b);border:1px solid #d4a017;border-radius:7px;color:#050b18;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:.07em;padding:10px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn:hover{background:linear-gradient(135deg,#b8860b,#d4a017);box-shadow:0 0 16px rgba(212,160,23,.4);transform:translateY(-1px)}
+#stat{text-align:center;font-style:italic;color:#b8860b;font-size:13px;min-height:18px}
+#gs{overflow:hidden;align-items:stretch}
+.gl{display:grid;grid-template-columns:255px 1fr 255px;width:100%;height:100vh}
+.sp{background:rgba(4,9,20,.97);border-right:1px solid rgba(180,140,50,.14);display:flex;flex-direction:column;overflow:hidden}
+.rp{border-right:none;border-left:1px solid rgba(180,140,50,.14)}
+.ph{display:flex;align-items:center;gap:8px;padding:11px 13px;background:rgba(180,140,50,.07);border-bottom:1px solid rgba(180,140,50,.13);font-family:'Cinzel',serif;font-size:10px;letter-spacing:.13em;font-weight:700;color:#d4a017;text-transform:uppercase;flex-shrink:0}
+.tbadge{margin-left:auto;background:rgba(255,255,255,.07);border-radius:100px;padding:2px 9px;font-size:9px}
+.cm{flex:1;overflow-y:auto;padding:9px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.cm::-webkit-scrollbar{width:3px}
+.cm::-webkit-scrollbar-thumb{background:#1e3a6e;border-radius:2px}
+.msg{display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:7px;animation:fu .2s ease;max-width:94%}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.me{background:rgba(180,140,50,.1);align-self:flex-end}
+.msg.ot{background:rgba(255,255,255,.04);align-self:flex-start}
+.msg.sy{background:transparent;align-self:center;text-align:center}
+.ma{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.07em;font-weight:700}
+.ma.red{color:#909090}.ma.blue{color:#a8d8f0}.ma.green{color:#e04050}.ma.gold{color:#e8900a}.ma.system{color:#506080}
+.mt{font-size:13px;color:#e8d5a0;line-height:1.4;word-break:break-word}
+.msg.sy .mt{font-size:11px;color:#506080;font-style:italic}
+.cir{display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(180,140,50,.1);flex-shrink:0}
+.cir input{flex:1;font-size:13px;padding:7px 10px}
+.sb{background:rgba(180,140,50,.12);border:1px solid #6b3d10;border-radius:6px;color:#d4a017;font-size:14px;width:32px;min-width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sb:hover{background:rgba(180,140,50,.26);color:#ffe680}
+.pls{border-top:1px solid rgba(180,140,50,.1);padding:8px 10px;flex-shrink:0}
+.stl{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.13em;color:#506080;text-transform:uppercase;margin-bottom:5px}
+.pr{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:5px;font-size:11px;background:rgba(255,255,255,.02);margin-bottom:2px}
+.pd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pd.red{background:#2a2a2a}.pd.blue{background:#dff4ff}.pd.green{background:#c01828}.pd.gold{background:#e8900a}
+.pnl{color:#e8d5a0;flex:1;font-size:11px}.ps{font-size:10px;color:#506080}.ps.on{color:#d4a017}
+.rid{font-family:'Cinzel',serif;font-size:10px;color:#506080;text-align:center;margin-top:5px}.rid span{color:#b8860b;font-weight:700}
+.cc2{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px}
+.bi{font-family:'Cinzel',serif;font-size:11px;color:#7080a0;padding:3px 12px;background:rgba(255,255,255,.03);border-radius:100px;border:1px solid rgba(255,255,255,.05)}
+.bc{position:relative;flex-shrink:0}
+#gc{display:block;border-radius:6px;cursor:pointer;box-shadow:0 0 0 1px rgba(160,190,220,.25),0 0 0 5px rgba(100,140,170,.18),0 0 0 7px rgba(0,0,0,.35),0 20px 60px rgba(0,0,0,.75);}
+.pm{position:absolute;inset:0;background:rgba(4,9,20,.9);display:flex;align-items:center;justify-content:center;border-radius:3px;z-index:100}
+.pm.hidden{display:none}
+.pi{background:rgba(8,15,32,.98);border:1px solid rgba(180,140,50,.28);border-radius:14px;padding:20px;text-align:center}
+.pi p{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.1em;color:#d4a017;margin-bottom:12px}
+#pc2{display:flex;gap:9px;justify-content:center}
+.pb{width:64px;height:64px;background:rgba(255,255,255,.05);border:1px solid rgba(180,140,50,.18);border-radius:7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all .15s;padding:4px}
+.pb:hover{background:rgba(180,140,50,.16);border-color:#b8860b;transform:scale(1.06)}
+.pb span{font-family:'Cinzel',serif;font-size:8px;color:#b8860b}
+.ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+#td{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.1em;color:#d4a017;padding:5px 16px;background:rgba(180,140,50,.07);border:1px solid rgba(180,140,50,.16);border-radius:100px}
+.ca{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:.14em;color:#e74c3c;padding:5px 12px;background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.4);border-radius:100px;animation:pu 1s ease infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.5}}
+.ca.hidden{display:none}
+.rotbtn{background:rgba(180,140,50,.1);border:1px solid rgba(180,140,50,.3);border-radius:7px;color:#d4a017;font-family:'Cinzel',serif;font-size:10px;letter-spacing:.07em;padding:5px 10px;cursor:pointer;transition:all .15s}
+.rotbtn:hover{background:rgba(180,140,50,.22);color:#ffe680}
+.gls{border-top:1px solid rgba(180,140,50,.1);padding:8px 10px;display:flex;flex-direction:column;gap:5px;height:160px;flex-shrink:0}
+.ml{overflow-y:auto;font-size:10px;color:#7080a0;display:flex;flex-direction:column;gap:2px;font-family:'Cinzel',serif}
+.ml::-webkit-scrollbar{width:3px}
+.ml::-webkit-scrollbar-thumb{background:#1e3a6e;border-radius:2px}
+.le{padding:1px 0}.le.red{color:#909090}.le.blue{color:#a8d8f0}.le.green{color:#e04050}.le.gold{color:#e8900a}
+.legbox{border-top:1px solid rgba(180,140,50,.08);padding:6px 10px;flex-shrink:0}
+.legrow{font-family:'Cinzel',serif;font-size:9px;color:#506080;line-height:1.8}
+.turnorder{background:rgba(255,255,255,.03);border:1px solid rgba(180,140,50,.1);border-radius:6px;padding:6px 10px;margin:6px 10px;flex-shrink:0}
+.to-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.12em;color:#506080;text-transform:uppercase;margin-bottom:4px}
+.to-row{display:flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:9px}
+.to-dot{width:7px;height:7px;border-radius:50%}
+.to-dot.red{background:#2a2a2a}.to-dot.blue{background:#dff4ff}.to-dot.green{background:#c01828}.to-dot.gold{background:#e8900a}
+.to-name{color:#7080a0}
+.to-sep{color:#506080;margin:0 2px}
+.timerbar{display:flex;align-items:center;gap:6px;padding:3px 6px;font-family:'Cinzel',serif;font-size:9px}
+.tbtrack{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.tbfill{height:100%;border-radius:3px;transition:width .9s linear}
+.tbfill.red{background:#303030}.tbfill.blue{background:#a8d8f0}.tbfill.green{background:#c01828}.tbfill.gold{background:#e8900a}
+.tbfill.low{background:#e74c3c;animation:pu 0.6s ease infinite}
+.tbtime{min-width:32px;text-align:right;color:#7080a0;font-size:9px}
+.actbtn{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.35);border-radius:6px;color:#e74c3c;font-family:'Cinzel',serif;font-size:10px;letter-spacing:.05em;padding:4px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;margin:2px}
+.actbtn:hover{background:rgba(231,76,60,.28);color:#ff8070}
+.kbtn{background:rgba(150,80,200,.12);border:1px solid rgba(150,80,200,.35);border-radius:6px;color:#c070f0;font-family:'Cinzel',serif;font-size:9px;padding:3px 7px;cursor:pointer;transition:all .15s;margin-left:auto;flex-shrink:0}
+.kbtn:hover{background:rgba(150,80,200,.28)}
+.kbtn:disabled{opacity:.3;cursor:default}
+.vote-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center}
+.vote-box{background:rgba(8,14,30,.98);border:1px solid rgba(180,140,50,.3);border-radius:14px;padding:24px 32px;text-align:center;max-width:340px}
+.vote-box h3{font-family:'Cinzel',serif;font-size:14px;letter-spacing:.1em;color:#d4a017;margin-bottom:10px}
+.vote-box p{font-size:13px;color:#9090a0;margin-bottom:16px}
+.vote-btns{display:flex;gap:10px;justify-content:center}
+.inactivity-warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(231,76,60,.92);color:#fff;font-family:'Cinzel',serif;font-size:13px;letter-spacing:.1em;padding:10px 22px;border-radius:8px;pointer-events:none;z-index:150;text-align:center}
+.hnav{display:flex;align-items:center;gap:5px;margin-top:4px;justify-content:center}
+.hnbtn{background:rgba(180,140,50,.12);border:1px solid rgba(180,140,50,.3);border-radius:6px;color:#d4a017;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.05em;padding:4px 10px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.hnbtn:hover:not(:disabled){background:rgba(180,140,50,.26);color:#ffe680}
+.hnbtn:disabled{opacity:.3;cursor:default}
+.hlive{background:rgba(192,57,43,.15);border-color:rgba(192,57,43,.5);color:#e74c3c}
+.hlive:hover{background:rgba(192,57,43,.28)!important;color:#ff6b6b!important}
+.hpos{font-family:'Cinzel',serif;font-size:10px;color:#506080;min-width:36px;text-align:center}
+.resign-vote-row{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+.resign-label{font-family:'Cinzel',serif;font-size:10px;color:#d4a017}
+.rvbtn{padding:3px 9px;border-radius:5px;font-size:11px;font-family:'Cinzel',serif;cursor:pointer;border:1px solid}
+.rvbtn.yes{background:rgba(39,174,96,.18);border-color:#27ae60;color:#2ecc71}
+.rvbtn.yes:hover{background:rgba(39,174,96,.35)}
+.rvbtn.no{background:rgba(192,57,43,.18);border-color:#c0392b;color:#e74c3c}
+.rvbtn.no:hover{background:rgba(192,57,43,.35)}
+.voted-label{font-size:10px;color:#7080a0;font-style:italic}
+.pending-resign{font-size:10px;color:#b8860b;font-style:italic;margin-top:3px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(10,22,40,.97);border:1px solid rgba(180,140,50,.4);border-radius:8px;
+  color:#e8d5a0;font-family:'Cinzel',serif;font-size:12px;padding:10px 18px;
+  opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Voice chat */
+.vcrow{display:flex;align-items:center;gap:6px;padding:5px 10px;border-top:1px solid rgba(180,140,50,.1);flex-shrink:0}
+.micbtn{width:32px;height:32px;border-radius:50%;border:2px solid rgba(180,140,50,.3);background:rgba(180,140,50,.08);color:#d4a017;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.micbtn:hover{background:rgba(180,140,50,.22)}
+.micbtn.muted{border-color:rgba(231,76,60,.5);background:rgba(192,57,43,.15);color:#e74c3c}
+.micbtn.speaking{border-color:#27ae60;background:rgba(39,174,96,.18);color:#2ecc71;animation:pu .6s ease infinite}
+.vclabel{font-family:'Cinzel',serif;font-size:9px;color:#506080;letter-spacing:.08em;flex:1}
+.vcpeer{display:flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:9px}
+.vcpeer-dot{width:6px;height:6px;border-radius:50%;background:#506080}
+.vcpeer-dot.live{background:#27ae60;animation:pu .8s ease infinite}
+/* Board corner name labels — outside the canvas */
+.board-outer{display:flex;flex-direction:column;align-items:stretch;gap:0}
+.board-corner-row{display:flex;align-items:center;justify-content:space-between;gap:4px;height:22px;padding:0 2px}
+.corner-spacer{flex:1}
+.corner-name-cell{font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:.07em;padding:2px 7px;border-radius:4px;white-space:nowrap;line-height:1.4;min-width:60px;text-align:center}
+.corner-name-cell.black-p {background:rgba(18,18,18,.92);color:#c0c0c0;border:1px solid #404040}
+.corner-name-cell.white-p {background:rgba(180,230,255,.92);color:#1a3a4a;border:1px solid #88c8e8}
+.corner-name-cell.silver-p{background:rgba(100,8,16,.92);color:#ffc0c8;border:1px solid #c01828}
+.corner-name-cell.gold-p  {background:rgba(100,50,0,.92);color:#ffd070;border:1px solid #c07000}
+.corner-name-cell.active  {box-shadow:0 0 0 2px #ffe680;animation:pu .8s ease infinite}
+.corner-name-cell.elim    {opacity:.38;text-decoration:line-through}
+</style>
 </head>
-<body class="dark-mode">
-  <div class="container">
-    <h1>Chaturaji Multiplayer</h1>
-
-    <div class="controls">
-      <button id="joinBtn">Join Room</button>
-      <button id="resetBtn">Reset Game</button>
+<body>
+<div id="app">
+ <div id="ls" class="screen active">
+  <div class="lw">
+   <div>
+    <div class="crown">&#9819;</div>
+    <h1 class="gtitle">CHATURAJI</h1>
+    <p class="gsub">Four Kings &middot; Two Teams &middot; Ancient India</p>
+   </div>
+   <div class="lcard">
+    <input type="text" id="ni" placeholder="Your name&hellip;" maxlength="20"/>
+    <div class="lbl">Choose your color</div>
+    <div class="ccs">
+     <div class="cc" data-color="red"   style="--c:#2a2a2a"><div class="csw"></div><span>Matte Black</span></div>
+     <div class="cc" data-color="blue"  style="--c:#dff4ff"><div class="csw"></div><span>Icy White</span></div>
+     <div class="cc" data-color="green" style="--c:#c01828"><div class="csw"></div><span>Crimson</span></div>
+     <div class="cc" data-color="gold"  style="--c:#e8900a"><div class="csw"></div><span>Amber Gold</span></div>
     </div>
-
-    <div class="game-layout">
-      <!-- Chessboard -->
-      <div id="board"></div>
-
-      <!-- Sidebar for chat + history -->
-      <div class="sidebar-container">
-        <div class="history-section">
-          <h3 style="padding:10px;">Move History</h3>
-          <div id="move-list"></div>
-        </div>
-        <div class="chat-section">
-          <h3 style="padding:10px;">Chat</h3>
-          <div id="chat-messages"></div>
-          <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Type a message...">
-            <button id="sendChat">Send</button>
-          </div>
-        </div>
-      </div>
+    <div class="tbox">
+     <div class="tb ta"><span class="tl">&#9876; TEAM A</span><span class="tm">Matte Black + Amber Gold</span></div>
+     <div class="vsd">VS</div>
+     <div class="tb tb2"><span class="tl">&#9876; TEAM B</span><span class="tm">Icy White + Crimson Red</span></div>
     </div>
+    <div class="rsec">
+     <input type="text" id="ri" placeholder="Room ID (blank = create new)"/>
+     <button id="jb" class="btn">Enter Arena</button>
+    </div>
+    <div id="stat">Enter your name and join!</div>
+   </div>
   </div>
+ </div>
 
-  <script type="module" src="main.js"></script>
+ <div id="gs" class="screen">
+  <div class="gl">
+   <div class="sp">
+    <div class="ph"><span>&#128737;</span><span>TEAM CHAT</span><span id="tld" class="tbadge">&#8212;</span></div>
+    <div class="vcrow">
+      <button class="micbtn muted" id="micbtn" title="Toggle microphone">🎤</button>
+      <span class="vclabel">Voice Chat (allies only)</span>
+      <span class="vcpeer" id="vcp"></span>
+    </div>
+    <div id="tcm" class="cm"></div>
+    <div class="cir">
+     <input type="text" id="tci" placeholder="Message ally&hellip;" maxlength="200"/>
+     <button id="tsb" class="sb">&#10148;</button>
+    </div>
+    <div class="pls">
+     <div class="stl">Players</div>
+     <div id="pl"></div>
+     <div class="rid">Room: <span id="rs">&#8212;</span></div>
+    </div>
+    <div class="turnorder">
+     <div class="to-title">Turn Order</div>
+     <div class="to-row">
+      <div class="to-dot red"></div><span class="to-name">Black</span>
+      <span class="to-sep">&#8594;</span>
+      <div class="to-dot blue"></div><span class="to-name">White</span>
+      <span class="to-sep">&#8594;</span>
+      <div class="to-dot gold"></div><span class="to-name">Amber</span>
+      <span class="to-sep">&#8594;</span>
+      <div class="to-dot green"></div><span class="to-name">Crimson</span>
+      <span class="to-sep">&#8594;</span><span class="to-name" style="color:#506080">repeat</span>
+     </div>
+    </div>
+    <div class="legbox">
+     <div class="legrow">K=King &nbsp; R=Rook &nbsp; N=Knight</div>
+     <div class="legrow">B=Bishop &nbsp; Q=Queen (promoted) &nbsp; P=Pawn</div>
+    </div>
+   </div>
+
+   <div class="cc2">
+    <div id="ot" class="bi" style="opacity:0">&#183;</div>
+    <div class="board-outer" id="board-outer">
+     <div class="board-corner-row">
+      <div class="corner-name-cell" id="cn-tl"></div>
+      <div class="corner-spacer"></div>
+      <div class="corner-name-cell" id="cn-tr"></div>
+     </div>
+     <div class="bc" id="board-wrap">
+      <canvas id="gc" width="640" height="640"></canvas>
+      <div id="pm" class="pm hidden">
+       <div class="pi"><p>Promote Pawn to:</p><div id="pc2"></div></div>
+      </div>
+     </div>
+     <div class="board-corner-row">
+      <div class="corner-name-cell" id="cn-bl"></div>
+      <div class="corner-spacer"></div>
+      <div class="corner-name-cell" id="cn-br"></div>
+     </div>
+    </div>
+    <div id="si" class="bi" style="opacity:0">&#183;</div>
+    <div class="ctrls">
+     <div id="td">Waiting&hellip;</div>
+     <button class="rotbtn" id="rotbtn">&#8635; Rotate</button>
+     <button class="rotbtn" id="themebtn">&#127822; Theme</button>
+     <button class="actbtn" id="resbtn">&#9873; Resign</button>
+    </div>
+    <div class="hnav">
+     <button class="hnbtn" id="hprev" disabled>&#9664; Prev</button>
+     <span class="hpos" id="hpos">0/0</span>
+     <button class="hnbtn" id="hnext" disabled>Next &#9654;</button>
+     <button class="hnbtn hlive" id="hlive" style="display:none">&#9679; Live</button>
+    </div>
+   </div>
+
+   <div class="sp rp">
+    <div class="ph"><span>&#128226;</span><span>PUBLIC CHAT</span></div>
+    <div id="pcm" class="cm"></div>
+    <div class="cir">
+     <input type="text" id="pci" placeholder="Global message&hellip;" maxlength="200"/>
+     <button id="psb" class="sb">&#10148;</button>
+    </div>
+    <div class="gls">
+     <div class="stl">Move Log</div>
+     <div id="ml" class="ml"></div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getDatabase,ref,set,get,push,onValue,update,remove}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FB={
+  apiKey:"AIzaSyCOd-enBXsbvSdX3q_j4DVQDk1-7XMZyUM",
+  authDomain:"chaturanga-25b8c.firebaseapp.com",
+  databaseURL:"https://chaturanga-25b8c-default-rtdb.firebaseio.com",
+  projectId:"chaturanga-25b8c",
+  storageBucket:"chaturanga-25b8c.firebasestorage.app",
+  messagingSenderId:"221727464973",
+  appId:"1:221727464973:web:f27ad5643380b2718e7f44",
+  measurementId:"G-035NB3F386"
+};
+
+// ── Constants ─────────────────────────────────────────────────────
+const COLORS=['red','blue','green','gold'];
+const TEAMS={red:'A',gold:'A',blue:'B',green:'B'};
+
+// Turn order alternates teams: Red(A) → Green(B) → Blue(A) → Gold(B) → repeat
+// Index into this array gives turn order, skipping eliminated players
+const TURN_ORDER=['red','blue','gold','green'];
+
+const PAWN_DIR  ={red:-1,blue:-1,green:1,gold:1};
+const PAWN_PROMO={red:0,  blue:0, green:7,gold:7};
+const PAWN_START={red:6,  blue:6, green:1,gold:1};
+
+// King starting squares for castling reference
+// Red: King at (7,3), Rooks at (7,0) [already Boat] and... wait —
+// Actually we're using standard chess pieces now: K, R, N, B, Bo(Boat), P
+// Per the user's request: Rook = standard rook power + castling, standard promotions
+
+const PIECE_COLORS={
+  // Tint applied over cream Lichess SVG pieces
+  red:  {fill:'#2a2a2a', stroke:'#000000', hl:'rgba(100,100,100,0.4)', label:'Matte Black'}, // Matte Black
+  blue: {fill:'#dff4ff', stroke:'#5a7888', hl:'rgba(255,255,255,0.95)', label:'Icy White'}, // Icy White
+  green:{fill:'#c01828', stroke:'#2a0008', hl:'rgba(255,120,120,0.80)', label:'Crimson Red'}, // Crimson Red
+  gold: {fill:'#e8900a', stroke:'#5a2e00', hl:'rgba(255,200,60,0.75)', label:'Amber Gold'}, // Amber Gold
+  gray: {fill:'#909090', stroke:'#303030', hl:'rgba(200,200,200,0.5)', label:'Out'},     // Eliminated
+};
+
+// ── Board Themes ─────────────────────────────────────────────────
+const BOARD_THEMES = [
+  {
+    name: 'Glass',
+    light: '#cdd5de',
+    dark:  '#7a8fa0',
+    selFill:   'rgba(100,180,255,.45)',
+    lastFill:  'rgba(140,200,255,.30)',
+    dotFill:   'rgba(120,185,255,.55)',
+    ringStroke:'rgba(80,160,255,.65)',
+    coordLight:'rgba(210,220,230,.8)',
+    coordDark: 'rgba(60,80,100,.75)',
+  },
+  {
+    name: 'Forest',
+    light: '#eef3dc',
+    dark:  '#6a9e4a',
+    selFill:   'rgba(255,240,100,.50)',
+    lastFill:  'rgba(200,230,120,.38)',
+    dotFill:   'rgba(60,120,40,.55)',
+    ringStroke:'rgba(40,100,20,.70)',
+    coordLight:'rgba(238,243,220,.85)',
+    coordDark: 'rgba(50,80,30,.75)',
+  },
+  {
+    name: 'Classic',
+    light: '#f0d9b5',
+    dark:  '#b58863',
+    selFill:   'rgba(255,215,0,.50)',
+    lastFill:  'rgba(205,185,0,.32)',
+    dotFill:   'rgba(0,0,0,.22)',
+    ringStroke:'rgba(200,50,50,.60)',
+    coordLight:'rgba(240,217,181,.8)',
+    coordDark: 'rgba(100,60,15,.8)',
+  },
+  {
+    name: 'Night',
+    light: '#4a5568',
+    dark:  '#1a202c',
+    selFill:   'rgba(100,200,255,.45)',
+    lastFill:  'rgba(80,160,220,.30)',
+    dotFill:   'rgba(100,200,255,.55)',
+    ringStroke:'rgba(80,180,255,.65)',
+    coordLight:'rgba(180,200,220,.8)',
+    coordDark: 'rgba(80,100,120,.75)',
+  },
+];
+let _boardThemeIdx = 0; // default: Glass
+
+// ── Board Setup ───────────────────────────────────────────────────
+// Pieces per player: R=Rook, N=Knight, B=Bishop, K=King, P=Pawn
+// No Boat piece — user wants standard chess pieces + castling + standard promotion
+//
+// Layout (each player owns a 4-wide corner):
+//   Red   (bottom-left):  row7 cols 0-3 = R N B K,  row6 cols 0-3 = P P P P
+//   Blue  (bottom-right): row7 cols 4-7 = K B N R,  row6 cols 4-7 = P P P P
+//   Green (top-right):    row0 cols 4-7 = K B N R,  row1 cols 4-7 = P P P P
+//   Gold  (top-left):     row0 cols 0-3 = R N B K,  row1 cols 0-3 = P P P P
+//
+// Allied kings (Red+Blue) are on OPPOSITE sides of centre — NOT adjacent.
+// Red King at (7,3), Blue King at (7,4) — they ARE adjacent at start.
+// To avoid this, mirror Blue's layout: Blue row7 = K B N R  (K at col4, R at col7)
+// and Red row7 = R N B K (K at col3, R at col0). Kings at cols 3 and 4 — still adjacent!
+// Solution: put each team's kings on the outer edge of their half:
+//   Red   row7: K B N R  → K at col0, R at col3   (King on the far-left)
+//   Blue  row7: R N B K  → R at col4, K at col7   (King on the far-right)
+//   Green row0: R N B K  → R at col4, K at col7   (mirror of Blue)
+//   Gold  row0: K B N R  → K at col0, R at col3   (mirror of Red)
+// Now Red King col0, Blue King col7 — far apart. Allied kings won't be adjacent.
+// Castling: each king moves 2 toward its Rook (king-side = toward center in this layout)
+function initBoard(){
+  const b=Array(64).fill(null);
+  const P=(r,c,t,co)=>{b[r*8+c]={type:t,color:co}};
+  // NEW LAYOUT — Queens in back rank (replace Bishops), Bishops pushed forward,
+  // pawns in a spread opening formation matching the new piece arrangement.
+  //
+  // Gold  top-left  : R(0,0) N(0,1) Q(0,2) K(0,3)   Bishop → row1 in front of King
+  P(0,0,'R','gold'); P(0,1,'N','gold'); P(0,2,'Q','gold'); P(0,3,'K','gold');
+  P(1,3,'B','gold'); P(1,2,'P','gold');       // Bishop + pawn in row 1
+  P(2,0,'P','gold'); P(2,3,'P','gold');        // pawns advanced in row 2
+  P(3,0,'P','gold');                           // lone flank pawn row 3
+  // Green top-right : K(0,4) Q(0,5) N(0,6) R(0,7)   Bishop → row1 in front of King
+  P(0,4,'K','green'); P(0,5,'Q','green'); P(0,6,'N','green'); P(0,7,'R','green');
+  P(1,4,'B','green'); P(1,5,'P','green');      // Bishop + pawn in row 1
+  P(2,4,'P','green'); P(2,6,'P','green');      // pawns advanced in row 2
+  P(3,7,'P','green');                          // lone flank pawn row 3
+  // Red   bottom-left : R(7,0) N(7,1) Q(7,2) K(7,3)  Bishop → row6 in front of King
+  P(7,0,'R','red'); P(7,1,'N','red'); P(7,2,'Q','red'); P(7,3,'K','red');
+  P(6,3,'B','red'); P(6,2,'P','red');          // Bishop + pawn in row 6
+  P(5,1,'P','red'); P(5,3,'P','red');          // pawns advanced in row 5
+  P(4,0,'P','red');                            // lone flank pawn row 4
+  // Blue  bottom-right: K(7,4) Q(7,5) N(7,6) R(7,7)  Bishop → row6 in front of King
+  P(7,4,'K','blue'); P(7,5,'Q','blue'); P(7,6,'N','blue'); P(7,7,'R','blue');
+  P(6,4,'B','blue'); P(6,5,'P','blue');        // Bishop + pawn in row 6
+  P(5,4,'P','blue'); P(5,6,'P','blue');        // pawns advanced in row 5
+  P(4,7,'P','blue');                           // lone flank pawn row 4
+  return b;
+}
+
+// Castling rights per color: K=king-side (toward centre), Q=queen-side (away from centre)
+// Updated layout:
+//   Gold:  King at col3, Rook at col0 — castling moves king LEFT  (toward rook at col0)
+//   Green: King at col4, Rook at col7 — castling moves king RIGHT (toward rook at col7)
+//   Red:   King at col3, Rook at col0 — castling moves king LEFT  (toward rook at col0)
+//   Blue:  King at col4, Rook at col7 — castling moves king RIGHT (toward rook at col7)
+// We track a single 'K' flag per color meaning "king-side rook castling available"
+function initCastlingRights(){
+  const cr={};
+  COLORS.forEach(c=>cr[c]={K:true,Q:false});
+  return cr;
+}
+
+// ── Game Logic ────────────────────────────────────────────────────
+function gp(b,r,c){
+  if(r<0||r>7||c<0||c>7)return undefined;
+  return b[r*8+c]||null;
+}
+// _elimSet tracks eliminated colors so their pieces are capturable by anyone incl. allies
+let _elimSet=new Set();
+function isFriend(p,col){
+  if(!p)return false;
+  if(p.color===col)return true;                  // own pieces always blocked
+  if(_elimSet.has(p.color))return false;          // eliminated pieces = capturable by all
+  return TEAMS[p.color]===TEAMS[col];             // living teammate = friend (can't capture)
+}
+function isEnemy(p,col){return!!p&&!isFriend(p,col)}
+
+function genMoves(board,row,col,color,cr){
+  const pc=gp(board,row,col);
+  if(!pc||pc.color!==color)return[];
+  const mv=[];
+
+  const slide=(dr,dc)=>{
+    let r=row+dr,c=col+dc;
+    while(r>=0&&r<=7&&c>=0&&c<=7){
+      const t=gp(board,r,c);
+      if(isFriend(t,color))break;
+      mv.push({from:[row,col],to:[r,c],capture:!!t});
+      if(t)break;
+      r+=dr;c+=dc;
+    }
+  };
+  const step=(dr,dc)=>{
+    const tr=row+dr,tc=col+dc;
+    if(tr<0||tr>7||tc<0||tc>7)return;
+    if(!isFriend(gp(board,tr,tc),color))
+      mv.push({from:[row,col],to:[tr,tc],capture:!!gp(board,tr,tc)});
+  };
+
+  if(pc.type==='P'){
+    const dir=PAWN_DIR[color];
+    const tr=row+dir;
+    if(tr>=0&&tr<=7){
+      if(!gp(board,tr,col)){
+        mv.push({from:[row,col],to:[tr,col],capture:false,promo:tr===PAWN_PROMO[color]});
+        // Double push from starting rank
+        if(row===PAWN_START[color]){
+          const tr2=row+dir*2;
+          if(tr2>=0&&tr2<=7&&!gp(board,tr2,col))
+            mv.push({from:[row,col],to:[tr2,col],capture:false,promo:false,doublePush:true});
+        }
+      }
+      [-1,1].forEach(dc=>{
+        if(col+dc<0||col+dc>7)return;
+        const t=gp(board,tr,col+dc);
+        if(t&&isEnemy(t,color))
+          mv.push({from:[row,col],to:[tr,col+dc],capture:true,promo:tr===PAWN_PROMO[color]});
+      });
+    }
+  }
+  else if(pc.type==='R'){
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc));
+  }
+  else if(pc.type==='N'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>step(dr,dc));
+  }
+  else if(pc.type==='B'){
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));
+  }
+  else if(pc.type==='Q'){
+    [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));
+  }
+  else if(pc.type==='K'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>step(dr,dc));
+    // Castling: king moves 2 squares toward the rook
+    // Red/Gold: King on left (col0 or col0), Rook toward right (col3) — king moves RIGHT (+col)
+    // Blue/Green: King on right (col7), Rook toward left (col4) — king moves LEFT (-col)
+    if(cr&&cr[color]&&cr[color].K){
+      const dir=(color==='red'||color==='gold')?-1:1; // Red/Gold king at col3 castles LEFT; Blue/Green king at col4 castles RIGHT
+      const sq1=col+dir, sq2=col+dir*2, rookCol=col+dir*3;
+      const inBounds=(c)=>c>=0&&c<=7;
+      if(inBounds(sq1)&&inBounds(sq2)&&inBounds(rookCol)){
+        const rook=gp(board,row,rookCol);
+        if(rook&&rook.type==='R'&&rook.color===color&&!gp(board,row,sq1)&&!gp(board,row,sq2))
+          mv.push({from:[row,col],to:[row,sq2],castle:'K',rookFrom:[row,rookCol],rookTo:[row,sq1]});
+      }
+    }
+  }
+  return mv;
+}
+
+function applyMove(board,move,promo='Q'){
+  const nb=[...board];
+  const[fr,fc]=move.from,[tr,tc]=move.to;
+  const pc=nb[fr*8+fc];
+  nb[fr*8+fc]=null;
+  // Handle castling: move rook using stored rookFrom/rookTo
+  if(move.castle&&move.rookFrom&&move.rookTo){
+    const[rfr,rfc]=move.rookFrom,[rtr,rtc]=move.rookTo;
+    nb[rtr*8+rtc]=nb[rfr*8+rfc];
+    nb[rfr*8+rfc]=null;
+  }
+  nb[tr*8+tc]=move.promo?{type:promo,color:pc.color}:pc;
+  return nb;
+}
+
+function updateCR(cr,move,board){
+  const n={};COLORS.forEach(c=>n[c]={K:!!(cr&&cr[c]&&cr[c].K),Q:!!(cr&&cr[c]&&cr[c].Q)});
+  const[fr,fc]=move.from;const p=board[fr*8+fc];
+  if(!p)return n;
+  if(p.type==='K')n[p.color]={K:false,Q:false};
+  if(p.type==='R'){if(fc>4)n[p.color].K=false;else n[p.color].Q=false;}
+  return n;
+}
+
+function isKingAlive(board,color){
+  for(let i=0;i<64;i++){const p=board[i];if(p&&p.type==='K'&&p.color===color)return true;}
+  return false;
+}
+
+// Check if a color's king is under attack by ENEMIES ONLY (not allies)
+// Uses isFriend() which already accounts for eliminated pieces
+function isInCheck(board,color){
+  let kr=-1,kc=-1;
+  for(let i=0;i<64;i++){const p=board[i];if(p&&p.type==='K'&&p.color===color){kr=Math.floor(i/8);kc=i%8;break;}}
+  if(kr===-1)return false;
+  for(let i=0;i<64;i++){
+    const p=board[i];
+    if(!p)continue;
+    // Skip own pieces and living teammates — only enemies and eliminated-team's pieces can give check
+    // Actually: check = an OPPOSING team's living piece attacks the king
+    // Eliminated players' pieces are "neutral" — they can't give check since they have no turn
+    if(p.color===color)continue;                        // own piece
+    if(_elimSet.has(p.color))continue;                  // eliminated — no check
+    if(TEAMS[p.color]===TEAMS[color])continue;          // living teammate — no check
+    const er=Math.floor(i/8),ec=i%8;
+    if(genMoves(board,er,ec,p.color,null).some(m=>m.to[0]===kr&&m.to[1]===kc))return true;
+  }
+  return false;
+}
+
+// Checkmate: player is in check AND every possible move still leaves them in check
+// elimSetForCheck = Set of eliminated colors to use for this board state
+function isCheckmate(board, color, cr, elimSetForCheck){
+  // First must be in check
+  const prev = _elimSet;
+  _elimSet = elimSetForCheck; // temporarily set elimSet for isInCheck calls
+  if(!isInCheck(board, color)){
+    _elimSet = prev;
+    return false;
+  }
+  // Try every legal move — if any one escapes check, not checkmate
+  for(let i=0;i<64;i++){
+    const p=board[i];
+    if(!p||p.color!==color)continue;
+    const r=Math.floor(i/8), c=i%8;
+    const moves=genMoves(board,r,c,color,cr);
+    for(const mv of moves){
+      const nb=applyMove(board,mv,'Q');
+      if(!isInCheck(nb,color)){
+        _elimSet=prev;
+        return false; // found an escape
+      }
+    }
+  }
+  _elimSet=prev;
+  return true; // no escape → checkmate
+}
+
+function sqName(r,c){return String.fromCharCode(97+c)+(8-r)}
+
+// ── Deserialization ───────────────────────────────────────────────
+function deserBoard(raw){
+  const b=Array(64).fill(null);
+  if(!raw)return b;
+  if(Array.isArray(raw)){raw.forEach((v,i)=>{if(i<64&&v&&v.type)b[i]=v;});}
+  else{Object.entries(raw).forEach(([k,v])=>{const i=+k;if(i>=0&&i<64&&v&&v.type)b[i]=v;});}
+  return b;
+}
+function deserElim(raw){
+  if(!raw)return[];
+  if(Array.isArray(raw))return raw.filter(Boolean);
+  return Object.values(raw).filter(Boolean);
+}
+function deserCR(raw){
+  const n={};
+  COLORS.forEach(c=>{
+    const s=raw&&raw[c]?raw[c]:{};
+    n[c]={K:!!(s.K||s.kingSide),Q:!!(s.Q||s.queenSide)};
+  });
+  return n;
+}
+
+// ── Board View Transforms ─────────────────────────────────────────
+// b2d: board coords → display coords for given perspective
+// d2b: display coords → board coords
+function b2d(r,c,p){
+  if(p==='red')   return [r,   c  ];
+  if(p==='blue')  return [r,   7-c];
+  if(p==='green') return [7-r, 7-c];
+  if(p==='gold')  return [7-r, c  ];
+  return [r,c];
+}
+function d2b(dr,dc,p){
+  if(p==='red')   return [dr,   dc  ];
+  if(p==='blue')  return [dr,   7-dc];
+  if(p==='green') return [7-dr, 7-dc];
+  if(p==='gold')  return [7-dr, dc  ];
+  return [dr,dc];
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PIECE RENDERING — loads real SVG artwork from Lichess CDN
+// Fetches the actual cburnett piece SVGs, tints each one to the
+// player's colour by pixel-multiplying the cream body pixels,
+// then caches as offscreen canvases and draws with drawImage.
+// Falls back to a labelled circle if CDN is unreachable.
+// ══════════════════════════════════════════════════════════════════
+
+const _svgRaw   = {};  // raw SVG text, keyed by piece type 'P','R' etc.
+const _pieceImg = {};  // tinted offscreen canvas, keyed 'type_colorKey'
+const PIECE_SZ  = 240; // offscreen render resolution (px)
+const CDN       = 'https://lichess1.org/assets/piece/cburnett/';
+
+// Parse any CSS colour → [r, g, b]
+function _parseRGB(css){
+  const c=document.createElement('canvas'); c.width=c.height=1;
+  const x=c.getContext('2d'); x.fillStyle=css; x.fillRect(0,0,1,1);
+  const d=x.getImageData(0,0,1,1).data; return [d[0],d[1],d[2]];
+}
+
+// Render an SVG text string onto a new offscreen canvas at PIECE_SZ×PIECE_SZ
+function _svgToCanvas(svgText){
+  return new Promise(res=>{
+    const blob = new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = ()=>{
+      const oc=document.createElement('canvas');
+      oc.width=oc.height=PIECE_SZ;
+      oc.getContext('2d').drawImage(img,0,0,PIECE_SZ,PIECE_SZ);
+      URL.revokeObjectURL(url);
+      res(oc);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); res(null); };
+    img.src=url;
+  });
+}
+
+// Tint a rendered canvas: cream/white body pixels → player fill colour,
+// dark outline pixels stay dark, transparent stays transparent.
+async function _tintPiece(type, colorKey){
+  const raw = _svgRaw[type];
+  if(!raw) return null;
+  const oc = await _svgToCanvas(raw);
+  if(!oc) return null;
+
+  const ctx  = oc.getContext('2d');
+  const id   = ctx.getImageData(0,0,PIECE_SZ,PIECE_SZ);
+  const data = id.data;
+  const c    = PIECE_COLORS[colorKey];
+  const [fr,fg,fb] = _parseRGB(c.fill);
+
+  for(let i=0;i<data.length;i+=4){
+    const a=data[i+3];
+    if(a<20) continue;                         // transparent → skip
+    const r=data[i],g=data[i+1],b=data[i+2];
+    const lum=(r+g+b)/3;
+    if(lum>90){                                // light pixel = piece body
+      // multiply by player colour to tint while preserving shading
+      const shade = lum/255;
+      data[i]  =Math.min(255,Math.round(fr*shade*1.15));
+      data[i+1]=Math.min(255,Math.round(fg*shade*1.15));
+      data[i+2]=Math.min(255,Math.round(fb*shade*1.15));
+    }
+    // dark pixels (outlines) kept as-is
+  }
+  ctx.putImageData(id,0,0);
+  return oc;
+}
+
+// Preload all pieces from CDN and build the cache
+async function initPieces(){
+  const types=['P','R','N','B','Q','K'];
+  // Fetch white-piece SVGs (clean cream fill, dark outlines)
+  await Promise.all(types.map(t=>
+    fetch(CDN+'w'+t+'.svg')
+      .then(r=>r.ok?r.text():null)
+      .then(txt=>{ if(txt) _svgRaw[t]=txt; })
+      .catch(()=>{})
+  ));
+  // Tint for every piece type × every player colour
+  const colorKeys=Object.keys(PIECE_COLORS);
+  for(const t of types)
+    for(const ck of colorKeys)
+      _pieceImg[t+'_'+ck] = await _tintPiece(t,ck);
+
+  if(GS) paint();  // re-render if game is already running
+}
+
+// ── Main draw call ────────────────────────────────────────────────
+function drawPiece(ctx, type, colorKey, cx, cy, sz){
+  const cached = _pieceImg[type+'_'+colorKey];
+  ctx.save();
+  ctx.shadowColor  ='rgba(0,0,0,0.38)';
+  ctx.shadowBlur   = sz*0.14;
+  ctx.shadowOffsetY= sz*0.07;
+  if(cached){
+    ctx.drawImage(cached, cx-sz/2, cy-sz/2, sz, sz);
+  } else {
+    // Fallback: small labelled disc while CDN is loading
+    const c=PIECE_COLORS[colorKey]||PIECE_COLORS.gray;
+    ctx.beginPath(); ctx.arc(cx,cy,sz*0.28,0,Math.PI*2);
+    ctx.fillStyle=c.fill; ctx.fill();
+    ctx.strokeStyle=c.stroke; ctx.lineWidth=sz*0.055; ctx.stroke();
+    ctx.fillStyle=c.stroke;
+    ctx.font=`bold ${sz*0.22}px Cinzel,serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(type,cx,cy);
+  }
+  ctx.restore();
+}
+
+
+// ── Board Renderer ────────────────────────────────────────────────
+function renderBoard(ctx,board,selSq,legals,lastMv,persp,elimSet){
+  const S=80;
+  const TH=BOARD_THEMES[_boardThemeIdx]||BOARD_THEMES[0];
+  ctx.clearRect(0,0,640,640);
+  for(let dr=0;dr<8;dr++){
+    for(let dc=0;dc<8;dc++){
+      const[r,c]=d2b(dr,dc,persp);
+      ctx.fillStyle=(dr+dc)%2===0?TH.light:TH.dark;
+      ctx.fillRect(dc*S,dr*S,S,S);
+      // Last move highlight
+      if(lastMv){
+        const[fr,fc]=lastMv.from,[tr,tc]=lastMv.to;
+        if((r===fr&&c===fc)||(r===tr&&c===tc)){ctx.fillStyle=TH.lastFill;ctx.fillRect(dc*S,dr*S,S,S);}
+      }
+      // Selected
+      if(selSq){
+        const[sdr,sdc]=b2d(selSq[0],selSq[1],persp);
+        if(dr===sdr&&dc===sdc){ctx.fillStyle=TH.selFill;ctx.fillRect(dc*S,dr*S,S,S);}
+      }
+      // Legal move dots/rings
+      const hasLegal=legals.some(m=>{const[tdr,tdc]=b2d(m.to[0],m.to[1],persp);return dr===tdr&&dc===tdc;});
+      if(hasLegal){
+        if(gp(board,r,c)){ctx.strokeStyle=TH.ringStroke;ctx.lineWidth=7;ctx.beginPath();ctx.arc(dc*S+40,dr*S+40,36,0,Math.PI*2);ctx.stroke();}
+        else{ctx.fillStyle=TH.dotFill;ctx.beginPath();ctx.arc(dc*S+40,dr*S+40,13,0,Math.PI*2);ctx.fill();}
+      }
+    }
+  }
+  // Coordinates
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.font='bold 11px Cinzel,serif';
+  for(let i=0;i<8;i++){
+    const lt=i%2===0;
+    const[bRow]=d2b(i,0,persp);
+    ctx.fillStyle=lt?TH.coordDark:TH.coordLight;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(8-bRow,i*S+3,i*S+2);
+    const[,bCol]=d2b(7,i,persp);
+    ctx.fillStyle=lt?TH.coordLight:TH.coordDark;ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText(String.fromCharCode(97+bCol),(i+1)*S-3,640-2);
+  }
+  // Pieces
+  for(let dr=0;dr<8;dr++)for(let dc=0;dc<8;dc++){
+    const[r,c]=d2b(dr,dc,persp);const p=gp(board,r,c);
+    if(p){const ck=elimSet&&elimSet.has(p.color)?'gray':p.color;drawPiece(ctx,p.type,ck,dc*S+40,dr*S+40,S);}
+  }
+}
+
+// ── App State ─────────────────────────────────────────────────────
+let db2,roomId,myColor,myName;
+let GS=null,selSq=null,legals=[],pendPromo=null;
+let moveHistory=[],histIdx=-1; // -1 = live view
+let perspective='red';
+const stat=document.getElementById('stat');
+
+try{const app=initializeApp(FB);db2=getDatabase(app);}
+catch(e){stat.textContent='Firebase error: '+e.message;stat.style.color='#e74c3c';}
+initPieces(); // start fetching piece SVGs immediately in background
+
+// ── Lobby ─────────────────────────────────────────────────────────
+document.querySelectorAll('.cc').forEach(el=>{
+  el.addEventListener('click',()=>{document.querySelectorAll('.cc').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');});
+});
+document.querySelector('[data-color="red"]').classList.add('sel');
+document.getElementById('jb').addEventListener('click',doJoin);
+['ni','ri'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doJoin();}));
+
+async function doJoin(){
+  if(!db2){setStat('Firebase not ready!');return;}
+  const name=document.getElementById('ni').value.trim();
+  if(!name){setStat('Enter your name!');return;}
+  const color=document.querySelector('.cc.sel')?.dataset?.color;
+  if(!color){setStat('Choose a color!');return;}
+  myName=name;myColor=color;perspective=color;
+  let rid=document.getElementById('ri').value.trim().toUpperCase();
+  if(!rid)rid=Math.random().toString(36).substring(2,8).toUpperCase();
+  setStat('Connecting...');
+  try{
+    const snap=await get(ref(db2,`rooms/${rid}`));
+    if(!snap.exists()){
+      const TIMER_MS=300000; // 5 minutes per player
+      await set(ref(db2,`rooms/${rid}`),{
+        board:initBoard(),
+        currentTurn:'red',turnIndex:0,
+        castlingRights:initCastlingRights(),
+        eliminated:null,lastMove:null,winner:null,
+        players:{[myColor]:{name:myName,online:true}},
+        timers:{red:TIMER_MS,blue:TIMER_MS,green:TIMER_MS,gold:TIMER_MS},
+        turnStartedAt:null, gameStarted:false,
+        createdAt:Date.now()
+      });
+      setStat('Room created! Share ID: '+rid);
+    }else{
+      const ex=snap.val();
+      if(ex.players?.[myColor]?.name&&ex.players[myColor].name!==myName){setStat('Color '+myColor+' is taken!');return;}
+      await update(ref(db2,`rooms/${rid}/players/${myColor}`),{name:myName,online:true});
+      setStat('Joined room '+rid+'!');
+    }
+    roomId=rid;setTimeout(enterGame,600);
+  }catch(err){console.error(err);setStat('Failed: '+err.message);stat.style.color='#e74c3c';}
+}
+function setStat(m){stat.textContent=m;stat.style.color='#b8860b';}
+
+// ── Game Screen ───────────────────────────────────────────────────
+function enterGame(){
+  document.getElementById('ls').classList.remove('active');
+  const gs=document.getElementById('gs');gs.classList.add('active');gs.style.display='flex';
+  const canvas=document.getElementById('gc');
+  fitCanvas(canvas);window.addEventListener('resize',()=>fitCanvas(canvas));
+  perspective=myColor;
+  document.getElementById('tld').textContent='TEAM '+TEAMS[myColor];
+  document.getElementById('tld').style.color=TEAMS[myColor]==='A'?'#e05050':'#40b060';
+  document.getElementById('rs').textContent=roomId;
+  const si=document.getElementById('si');
+  si.textContent=myName+' ('+myColor+' · Team '+TEAMS[myColor]+')';si.style.opacity='1';
+  si.style.color=({red:'#a0a0a0',blue:'#d0ccC4',green:'#90a8b8',gold:'#d49820'})[myColor];
+  setupChat();
+  canvas.addEventListener('click',handleClick);
+  canvas.addEventListener('contextmenu',e=>{e.preventDefault();selSq=null;legals=[];paint();});
+  document.getElementById('rotbtn').addEventListener('click',()=>{
+    const i=COLORS.indexOf(perspective);perspective=COLORS[(i+1)%4];
+    selSq=null;legals=[];paint();
+  });
+  document.getElementById('hprev').addEventListener('click',()=>{
+    if(histIdx<0) histIdx=moveHistory.length-1;
+    else if(histIdx>0) histIdx--;
+    paint();
+  });
+  document.getElementById('hnext').addEventListener('click',()=>{
+    if(histIdx>=0&&histIdx<moveHistory.length-1) histIdx++;
+    else histIdx=-1; // reached end = go live
+    paint();
+  });
+  document.getElementById('hlive').addEventListener('click',()=>{
+    histIdx=-1; selSq=null; legals=[]; paint();
+  });
+  document.getElementById('micbtn').addEventListener('click',toggleMic);
+  document.getElementById('themebtn').addEventListener('click',()=>{
+    _boardThemeIdx=(_boardThemeIdx+1)%BOARD_THEMES.length;
+    const name=BOARD_THEMES[_boardThemeIdx].name;
+    document.getElementById('themebtn').textContent=
+      ['🍃','🌙','♟','🔵'][_boardThemeIdx]+' '+name;
+    paint();
+    showToast('Board: '+name);
+  });
+  initPieces(); // load + tint real SVG pieces from CDN
+  setupResign();
+  listenGame();listenChats();listenLog();
+  SFX.join();
+  initVoiceChat();
+}
+
+function fitCanvas(c){
+  const sz=Math.max(280,Math.min(620,window.innerWidth-540,window.innerHeight-85));
+  c.style.width=sz+'px';c.style.height=sz+'px';
+}
+
+function paint(){
+  if(!GS)return;
+  const ctx=document.getElementById('gc').getContext('2d');
+  const boardToShow = histIdx>=0 && moveHistory[histIdx] ? moveHistory[histIdx].board : GS.board;
+  const elimToShow  = histIdx>=0 && moveHistory[histIdx] ? new Set(moveHistory[histIdx].elim||[]) : _elimSet;
+  const lastMvShow  = histIdx>=0 && moveHistory[histIdx] ? moveHistory[histIdx].lastMove : (GS.lastMove||null);
+  const selShow     = histIdx>=0 ? null : selSq;
+  const legShow     = histIdx>=0 ? [] : legals;
+  renderBoard(ctx,boardToShow,selShow,legShow,lastMvShow,perspective,elimToShow);
+  const ct=GS.currentTurn;
+  const glowC={red:'rgba(150,180,210,.30)',blue:'rgba(180,210,240,.35)',green:'rgba(140,180,200,.28)',gold:'rgba(180,200,210,.28)'};
+  document.getElementById('gc').style.boxShadow=
+    `0 0 0 5px #7d4e1a,0 0 0 9px #4a2c0a,0 0 0 11px rgba(0,0,0,.6),0 18px 50px rgba(0,0,0,.8)`+
+    (ct&&!histIdx&&glowC[ct]?`,0 0 0 15px ${glowC[ct]}`:'');
+  updHistButtons();
+  updCornerNames();
+}
+
+// Corner name mapping: which colour appears at each display corner
+// for each perspective.  Format: {tl, tr, bl, br}
+const CORNER_CLASS={red:'black-p',blue:'white-p',green:'silver-p',gold:'gold-p'};
+const PERSP_CORNERS={
+  red:  {tl:'gold', tr:'green', bl:'red',   br:'blue'},
+  blue: {tl:'green',tr:'gold',  bl:'blue',  br:'red'},
+  green:{tl:'blue', tr:'red',   bl:'green', br:'gold'},
+  gold: {tl:'red',  tr:'blue',  bl:'gold',  br:'green'},
+};
+
+function updCornerNames(){
+  if(!GS)return;
+  const corners=PERSP_CORNERS[perspective]||PERSP_CORNERS.red;
+  const elim=GS.eliminated||[];
+  ['tl','tr','bl','br'].forEach(pos=>{
+    const cell=document.getElementById('cn-'+pos);
+    if(!cell)return;
+    const color=corners[pos];
+    const p=GS.players?.[color];
+    const name=p?.name||(PIECE_COLORS[color]?.label||color);
+    const isElim=elim.includes(color);
+    const isActive=GS.currentTurn===color;
+    cell.textContent=(isActive?'▶ ':'')+name;
+    cell.className='corner-name-cell '+CORNER_CLASS[color]
+      +(isElim?' elim':'')
+      +(isActive&&!isElim?' active':'');
+  });
+}
+
+// ── Click Handling ────────────────────────────────────────────────
+function clickToBoard(e){
+  const canvas=document.getElementById('gc');
+  const rect=canvas.getBoundingClientRect();
+  const x=(e.clientX-rect.left)*(640/rect.width);
+  const y=(e.clientY-rect.top)*(640/rect.height);
+  const dc=Math.floor(x/80),dr=Math.floor(y/80);
+  if(dc<0||dc>7||dr<0||dr>7)return null;
+  return d2b(dr,dc,perspective);
+}
+
+function handleClick(e){
+  if(!GS)return;
+  // Exit history-browse mode on any board click
+  if(histIdx>=0){ histIdx=-1; selSq=null; legals=[]; paint(); return; }
+
+  const elim=GS.eliminated||[];
+  if(elim.includes(myColor)){selSq=null;legals=[];paint();return;}
+  if(GS.currentTurn!==myColor){
+    showToast("Not your turn — waiting for "+((GS.players?.[GS.currentTurn]?.name)||GS.currentTurn));
+    selSq=null;legals=[];paint();return;
+  }
+  if(GS.winner){selSq=null;legals=[];return;}
+
+  const sq=clickToBoard(e);if(!sq)return;
+  const[row,col]=sq;
+  const piece=gp(GS.board,row,col);
+
+  if(selSq){
+    const move=legals.find(m=>m.to[0]===row&&m.to[1]===col);
+    if(move){execMove(move);selSq=null;legals=[];return;}
+    // Clicked another own piece — reselect
+    if(piece&&piece.color===myColor){
+      selSq=[row,col];
+      legals=genMoves(GS.board,row,col,myColor,deserCR(GS.castlingRights));
+      paint();return;
+    }
+    selSq=null;legals=[];paint();return;
+  }
+  if(piece&&piece.color===myColor){
+    selSq=[row,col];
+    legals=genMoves(GS.board,row,col,myColor,deserCR(GS.castlingRights));
+    paint();
+  }else{
+    selSq=null;legals=[];paint();
+  }
+}
+
+function execMove(move){
+  if(move.promo){pendPromo=move;showPromoModal();}
+  else commitMove(move,'Q');
+}
+
+function showPromoModal(){
+  const modal=document.getElementById('pm'),ch=document.getElementById('pc2');
+  ch.innerHTML='';
+  // Standard chess promotion pieces
+  ['Q','R','B','N'].forEach(type=>{
+    const btn=document.createElement('div');btn.className='pb';
+    const cv=document.createElement('canvas');cv.width=cv.height=56;
+    setTimeout(()=>drawPiece(cv.getContext('2d'),type,myColor,28,28,56),10);
+    btn.appendChild(cv);
+    const lbl=document.createElement('span');
+    lbl.textContent={Q:'Queen',R:'Rook',B:'Bishop',N:'Knight'}[type];
+    btn.appendChild(lbl);
+    btn.addEventListener('click',()=>{modal.classList.add('hidden');commitMove(pendPromo,type);pendPromo=null;});
+    ch.appendChild(btn);
+  });
+  modal.classList.remove('hidden');
+}
+
+async function commitMove(move,promo){
+  if(!GS)return;
+  const board=GS.board;
+  const piece=gp(board,move.from[0],move.from[1]);
+  if(!piece)return;
+
+  const elim=GS.eliminated||[];
+  _elimSet=new Set(elim); // keep in sync for isFriend calls
+  const cr=deserCR(GS.castlingRights);
+  const newBoard=applyMove(board,move,promo);
+  const newCR=updateCR(cr,move,board);
+
+  // Detect eliminations FIRST (king capture OR checkmate) — before computing next turn
+  const newElim=[...elim];
+  const newElimSet=new Set(newElim); // live set used by isCheckmate/_elimSet during detection
+  COLORS.filter(col=>col!==myColor&&!newElim.includes(col)).forEach(col=>{
+    if(!isKingAlive(newBoard,col)){
+      // King was physically captured this move
+      newElim.push(col);
+      newElimSet.add(col);
+      SFX.eliminate(); sysChat((GS.players?.[col]?.name||col)+"'s king was captured — eliminated! ☠ Pieces stay on board (now gray).");
+    } else if(isCheckmate(newBoard, col, newCR, newElimSet)){
+      // King is in check with no legal escape
+      newElim.push(col);
+      newElimSet.add(col);
+      SFX.eliminate(); sysChat((GS.players?.[col]?.name||col)+" is in checkmate — eliminated! ☢ Pieces stay on board (now gray).");
+    }
+  });
+
+  // Next turn: skip ALL eliminated players (old + newly eliminated this move)
+  let nextIdx=(GS.turnIndex+1)%4;
+  for(let i=0;i<4;i++){
+    if(!newElim.includes(TURN_ORDER[nextIdx]))break;
+    nextIdx=(nextIdx+1)%4;
+  }
+  const nextColor=TURN_ORDER[nextIdx];
+
+  // Win: only one team left
+  const surviving=COLORS.filter(col=>!newElim.includes(col));
+  const teamsLeft=[...new Set(surviving.map(col=>TEAMS[col]))];
+  const winner=teamsLeft.length===1?teamsLeft[0]:null;
+
+  // Move notation
+  const note=`${myColor[0].toUpperCase()}: ${piece.type}${move.capture?'x':''}${sqName(move.to[0],move.to[1])}${move.castle?'(O-O)':''}${move.promo?'='+promo:''}`;
+  const elimObj=newElim.length>0?Object.fromEntries(newElim.map((col,i)=>[i,col])):null;
+
+  selSq=null;legals=[];
+
+  // Play sound for the move we just made
+  if(move.castle) SFX.castle();
+  else if(move.capture) SFX.capture();
+  else SFX.move();
+
+  try{
+    // Deduct time used this turn from current player's clock
+    const now=Date.now();
+    const rawTimers=GS.timers||{red:300000,blue:300000,green:300000,gold:300000};
+    const newTimers={...rawTimers};
+    if(GS.gameStarted&&GS.turnStartedAt){
+      const used=now-GS.turnStartedAt;
+      newTimers[myColor]=Math.max(0,(rawTimers[myColor]||300000)-used);
+    }
+    await update(ref(db2,`rooms/${roomId}`),{
+      board:newBoard,
+      currentTurn:winner?null:nextColor,
+      turnIndex:nextIdx,
+      castlingRights:newCR,
+      eliminated:elimObj,
+      lastMove:{from:move.from,to:move.to,color:myColor},
+      winner:winner||null,
+      timers:newTimers,
+      turnStartedAt:winner?null:now,
+      gameStarted:true,
+    });
+    // Store board snapshot + elim state for move history browsing
+    const boardSnap=newBoard.map(p=>p?{type:p.type,color:p.color}:null);
+    await push(ref(db2,`rooms/${roomId}/moveLog`),{
+      notation:note,color:myColor,ts:Date.now(),
+      board:boardSnap, elim:newElim,
+      lastMove:{from:move.from,to:move.to,color:myColor}
+    });
+  }catch(err){
+    console.error('Move failed:',err);
+    showToast('Move failed: '+(err?.message||'check Firebase rules'));
+    selSq=null;legals=[];paint(); // restore board view
+    return;
+  }
+  if(winner)showWin(winner);
+}
+
+// ── Firebase ──────────────────────────────────────────────────────
+let _timerInterval=null;
+let _inactInterval=null;
+
+function listenGame(){
+  onValue(ref(db2,`rooms/${roomId}`),snap=>{
+    if(!snap.exists())return;
+    const prevTurn=GS?.currentTurn;
+    GS=snap.val();
+    GS.board=deserBoard(GS.board);
+    GS.eliminated=deserElim(GS.eliminated);
+    _elimSet=new Set(GS.eliminated);
+    if(GS.currentTurn===myColor&&prevTurn!==myColor){
+      perspective=myColor;selSq=null;legals=[];
+      SFX.yourTurn();
+    }
+    // Check if kick vote passed for anyone
+    checkResignVotes();
+    paint();updPlayers();updTurn();
+    startTimerTick();
+    resetInactivityWatch();
+  });
+}
+
+// ── Client-side timer tick (updates display every second) ─────────
+function startTimerTick(){
+  if(_timerInterval) clearInterval(_timerInterval);
+  if(!GS||GS.winner)return;
+  _timerInterval=setInterval(()=>{
+    updTimers();
+    // Check if current player's timer hit 0
+    if(GS&&GS.currentTurn&&GS.gameStarted&&GS.turnStartedAt){
+      const raw=GS.timers||{};
+      const used=Date.now()-GS.turnStartedAt;
+      const left=(raw[GS.currentTurn]||0)-used;
+      if(left<=0&&GS.currentTurn===myColor){
+        clearInterval(_timerInterval);
+        doAutoResign(myColor,'time');
+      }
+    }
+  },1000);
+}
+
+// ── Inactivity: if it's your turn and you haven't moved in 40s ────
+function resetInactivityWatch(){
+  if(_inactInterval) clearInterval(_inactInterval);
+  if(!GS||!GS.gameStarted||GS.winner||GS.currentTurn!==myColor)return;
+  const INACT_MS=40000;
+  const started=GS.turnStartedAt||Date.now();
+  let warnShown=false;
+  _inactInterval=setInterval(()=>{
+    const elapsed=Date.now()-started;
+    if(elapsed>=INACT_MS){
+      clearInterval(_inactInterval);
+      doAutoResign(myColor,'inactivity');
+    } else if(elapsed>=INACT_MS-10000&&!warnShown){
+      warnShown=true;
+      showInactivityWarning(Math.ceil((INACT_MS-elapsed)/1000));
+    }
+  },1000);
+}
+
+function showInactivityWarning(secs){
+  let w=document.getElementById('inact-warn');
+  if(!w){
+    w=document.createElement('div');
+    w.id='inact-warn';w.className='inactivity-warn';
+    document.querySelector('.bc').appendChild(w);
+  }
+  w.textContent='⚠ Move in '+secs+'s or auto-resign!';
+  setTimeout(()=>w.remove(),10500);
+}
+
+async function doAutoResign(color,reason){
+  if(!GS||GS.winner)return;
+  const elim=GS.eliminated||[];
+  if(elim.includes(color))return;
+  sysChat((GS.players?.[color]?.name||color)+' was auto-resigned ('+reason+'). ⏱');
+  SFX.eliminate();
+  await forceEliminate(color);
+}
+
+// Core elimination helper (used by resign + kick + auto-resign)
+async function forceEliminate(color){
+  if(!GS)return;
+  const elim=GS.eliminated||[];
+  if(elim.includes(color))return;
+  const newElim=[...elim,color];
+  const newElimSet=new Set(newElim);
+  const elimObj=Object.fromEntries(newElim.map((c,i)=>[i,c]));
+  // Advance turn past eliminated player if it was their turn
+  let nextIdx=GS.turnIndex;
+  let nextColor=GS.currentTurn;
+  if(GS.currentTurn===color){
+    nextIdx=(GS.turnIndex+1)%4;
+    for(let i=0;i<4;i++){
+      if(!newElim.includes(TURN_ORDER[nextIdx]))break;
+      nextIdx=(nextIdx+1)%4;
+    }
+    nextColor=TURN_ORDER[nextIdx];
+  }
+  const surviving=COLORS.filter(c=>!newElim.includes(c));
+  const teamsLeft=[...new Set(surviving.map(c=>TEAMS[c]))];
+  const winner=teamsLeft.length===1?teamsLeft[0]:null;
+  try{
+    await update(ref(db2,`rooms/${roomId}`),{
+      eliminated:elimObj,
+      currentTurn:winner?null:nextColor,
+      turnIndex:nextIdx,
+      turnStartedAt:Date.now(),
+      winner:winner||null,
+    });
+    if(winner)showWin(winner);
+  }catch(e){console.error(e);}
+}
+
+function listenChats(){
+  const tk=TEAMS[myColor]==='A'?'teamA':'teamB';
+  onValue(ref(db2,`rooms/${roomId}/chats/${tk}`),s=>renderChat('tcm',s.exists()?s.val():null));
+  onValue(ref(db2,`rooms/${roomId}/chats/public`),s=>renderChat('pcm',s.exists()?s.val():null));
+}
+
+function listenLog(){
+  onValue(ref(db2,`rooms/${roomId}/moveLog`),snap=>{
+    if(!snap.exists())return;
+    const entries=Object.values(snap.val()).sort((a,b)=>a.ts-b.ts);
+    // Rebuild move history for browsing
+    moveHistory=entries.map(e=>({
+      board: e.board ? deserBoard(e.board) : null,
+      elim:  e.elim  ? deserElim(e.elim)  : [],
+      lastMove: e.lastMove||null,
+      notation: e.notation, color: e.color
+    }));
+    // Render log list
+    const log=document.getElementById('ml');log.innerHTML='';
+    entries.forEach((e,i)=>{
+      const d=document.createElement('div');
+      d.className='le '+e.color;
+      d.textContent=(i+1)+'. '+e.notation;
+      d.style.cursor='pointer';
+      d.addEventListener('click',()=>{ histIdx=i; paint(); });
+      log.appendChild(d);
+    });
+    log.scrollTop=log.scrollHeight;
+    updHistButtons();
+  });
+}
+
+function renderChat(id,msgs){
+  const cont=document.getElementById(id);
+  const arr=msgs?Object.values(msgs).sort((a,b)=>a.ts-b.ts):[];
+  cont.innerHTML='';
+  arr.forEach(m=>{
+    const d=document.createElement('div');
+    d.className='msg '+(m.color===myColor?'me':'ot')+(m.system?' sy':'');
+    if(m.system)d.innerHTML=`<span class="mt">${esc(m.text)}</span>`;
+    else d.innerHTML=`<span class="ma ${m.color}">${esc(m.name)}</span><span class="mt">${esc(m.text)}</span>`;
+    cont.appendChild(d);
+  });
+  cont.scrollTop=cont.scrollHeight;
+}
+
+function setupChat(){
+  const wire=(inId,btnId,ch)=>{
+    const inp=document.getElementById(inId),btn=document.getElementById(btnId);
+    const send=()=>{const t=inp.value.trim();if(!t)return;sendChat(ch,t);inp.value='';};
+    btn.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+  };
+  wire('tci','tsb','team');wire('pci','psb','public');
+}
+
+function sendChat(ch,text){
+  const tk=TEAMS[myColor]==='A'?'teamA':'teamB';
+  push(ref(db2,`rooms/${roomId}/chats/${ch==='team'?tk:'public'}`),
+    {name:myName,color:myColor,text,ts:Date.now()});
+}
+
+function sysChat(text){
+  ['teamA','teamB','public'].forEach(k=>
+    push(ref(db2,`rooms/${roomId}/chats/${k}`),
+      {system:true,text,ts:Date.now(),color:'system',name:'System'}));
+}
+
+function updHistButtons(){
+  const tot=moveHistory.length;
+  const live=histIdx<0;
+  document.getElementById('hprev').disabled=(histIdx===0||(live&&tot===0));
+  document.getElementById('hnext').disabled=live;
+  document.getElementById('hlive').style.display=live?'none':'inline-block';
+  document.getElementById('hpos').textContent=live?(tot>0?tot+'/'+tot:'0/0'):(histIdx+1)+'/'+tot;
+}
+// -- Timer display
+function fmtTime(ms){
+  if(ms<=0)return'0:00';
+  const s=Math.ceil(ms/1000);
+  return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');
+}
+function updTimers(){
+  if(!GS)return;
+  const TOTAL=300000;
+  const raw=GS.timers||{red:TOTAL,blue:TOTAL,green:TOTAL,gold:TOTAL};
+  const ct=GS.currentTurn;
+  TURN_ORDER.forEach(col=>{
+    const el=document.getElementById('tmr-'+col);
+    if(!el)return;
+    if(!GS.gameStarted){
+      // Game not started yet — show full 5:00 static bar
+      el.querySelector('.tbfill').style.width='100%';
+      el.querySelector('.tbfill').className='tbfill '+col;
+      el.querySelector('.tbtime').textContent='5:00';
+      return;
+    }
+    const base=raw[col]||TOTAL;
+    const used=(ct===col&&GS.turnStartedAt)?Math.max(0,Date.now()-GS.turnStartedAt):0;
+    const left=Math.max(0,base-used);
+    const pct=Math.min(100,left/TOTAL*100);
+    el.querySelector('.tbfill').style.width=pct+'%';
+    const low=left<30000;
+    el.querySelector('.tbfill').className='tbfill '+col+(low?' low':'');
+    el.querySelector('.tbtime').textContent=fmtTime(left);
+  });
+}
+
+// -- Resign Vote System
+// Player requests to resign → others vote YES/NO → majority YES = eliminated
+function setupResign(){
+  document.getElementById('resbtn').addEventListener('click',()=>{
+    if(!GS||GS.winner)return;
+    const elim=GS.eliminated||[];
+    if(elim.includes(myColor))return;
+    if(GS.resignVotes&&GS.resignVotes[myColor]){
+      showToast('Your resign request is already pending a vote.');return;
+    }
+    showConfirm('Request to resign? Other players must approve.',
+      'Request Resign',async()=>{
+        await set(ref(db2,`rooms/${roomId}/resignVotes/${myColor}`),
+          {[myColor]:'yes',requestedAt:Date.now()});
+        sysChat((GS.players?.[myColor]?.name||myColor)+' requests to resign. Vote in the player list!');
+      });
+  });
+}
+
+async function checkResignVotes(){
+  if(!GS||!GS.resignVotes)return;
+  const elim=GS.eliminated||[];
+  const active=COLORS.filter(c=>!elim.includes(c));
+  for(const [requester,votes] of Object.entries(GS.resignVotes||{})){
+    if(elim.includes(requester)){
+      await remove(ref(db2,`rooms/${roomId}/resignVotes/${requester}`));continue;
+    }
+    const others=active.filter(c=>c!==requester);
+    if(others.length===0){
+      await remove(ref(db2,`rooms/${roomId}/resignVotes/${requester}`));
+      sysChat((GS.players?.[requester]?.name||requester)+' resigned. \uD83C\uDFF3');
+      SFX.eliminate();await forceEliminate(requester);return;
+    }
+    const vlist=Object.entries(votes||{}).filter(([k])=>k!=='requestedAt');
+    const yesVotes=vlist.filter(([k,v])=>k!==requester&&v==='yes').length;
+    const noVotes =vlist.filter(([,v])=>v==='no').length;
+    const needed  =Math.ceil(others.length/2);
+    if(noVotes>0){
+      await remove(ref(db2,`rooms/${roomId}/resignVotes/${requester}`));
+      sysChat((GS.players?.[requester]?.name||requester)+"'s resign request was rejected.");return;
+    }
+    if(yesVotes>=needed){
+      await remove(ref(db2,`rooms/${roomId}/resignVotes/${requester}`));
+      sysChat((GS.players?.[requester]?.name||requester)+' resigned. \uD83C\uDFF3');
+      SFX.eliminate();await forceEliminate(requester);return;
+    }
+  }
+}
+
+async function castResignVote(requester,vote){
+  if(!GS||!roomId)return;
+  await update(ref(db2,`rooms/${roomId}/resignVotes/${requester}`),{[myColor]:vote});
+}
+
+function showToast(msg){
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+// -- Simple confirm modal
+function showConfirm(msg,yesLabel,onYes){
+  const ov=document.createElement('div');ov.className='vote-overlay';
+  ov.innerHTML=`<div class="vote-box"><h3>Confirm</h3><p>${esc(msg)}</p>`
+    +`<div class="vote-btns">`
+    +`<button class="btn" id="_cy">${esc(yesLabel)}</button>`
+    +`<button class="actbtn" id="_cn">Cancel</button>`
+    +`</div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#_cy').onclick=()=>{ov.remove();onYes();};
+  ov.querySelector('#_cn').onclick=()=>ov.remove();
+}
+
+function updTurn(){
+  if(!GS)return;
+  const ct=GS.currentTurn;const el=document.getElementById('td');
+  if(!ct){el.textContent='Game Over';return;}
+  const n=GS.players?.[ct]?.name||ct;
+  el.textContent=ct===myColor?'\u26a1 YOUR TURN':n+"'s turn";
+  el.style.color=ct===myColor?'#ffe680':'#7080a0';
+}
+
+function updPlayers(){
+  if(!GS)return;
+  const cont=document.getElementById('pl');cont.innerHTML='';
+  const elim=GS.eliminated||[];
+  TURN_ORDER.forEach(color=>{
+    const p=GS.players?.[color];
+    const isElim=elim.includes(color);
+    const isActive=GS.currentTurn===color;
+
+    const row=document.createElement('div');row.className='pr';
+    const nameStr=p?.name?esc(p.name):'(waiting…)';
+    const elimStyle=isElim?'opacity:.4;text-decoration:line-through':'';
+    row.innerHTML=
+      '<div class="pd '+color+'"></div>'
+      +'<span class="pnl" style="'+elimStyle+'">'
+      +nameStr
+      +'<small style="color:#506080;margin-left:3px">\u2694'+TEAMS[color]+'</small>'
+      +(isElim?'<small style="color:#e74c3c;margin-left:3px">out</small>':'')
+      +'</span>'
+      +'<span class="ps '+(isActive&&!isElim?'on':'')+'">'
+      +(isElim?'\u2620':isActive?'\u25b6':p?.name?'\u25cf':'\u25cb')
+      +'</span>';
+    // Resign vote UI
+    const rv=GS.resignVotes&&GS.resignVotes[color]?GS.resignVotes[color]:null;
+    const myVote=rv?rv[myColor]:null;
+    if(rv&&color!==myColor&&!isElim&&!elim.includes(myColor)&&!GS.winner){
+      const others2=COLORS.filter(c=>!elim.includes(c)&&c!==color);
+      const yc=Object.entries(rv).filter(([k,v])=>k!=='requestedAt'&&k!==color&&v==='yes').length;
+      const vr=document.createElement('div');vr.className='resign-vote-row';
+      vr.innerHTML='<span class="resign-label">Resign? '+yc+'/'+Math.ceil(others2.length/2)+'</span>';
+      if(!myVote){
+        const ya=document.createElement('button');ya.className='rvbtn yes';ya.textContent='\u2714 Yes';
+        ya.onclick=()=>castResignVote(color,'yes');
+        const na=document.createElement('button');na.className='rvbtn no';na.textContent='\u2718 No';
+        na.onclick=()=>castResignVote(color,'no');
+        vr.appendChild(ya);vr.appendChild(na);
+      }else{
+        vr.innerHTML+='<span class="voted-label">You voted: '+myVote+'</span>';
+      }
+      row.appendChild(vr);
+    }else if(rv&&color===myColor&&!isElim){
+      const yc2=Object.entries(rv).filter(([k,v])=>k!=='requestedAt'&&k!==color&&v==='yes').length;
+      const nc2=Object.entries(rv).filter(([,v])=>v==='no').length;
+      const pr=document.createElement('span');pr.className='pending-resign';
+      pr.textContent='\u231B Resign: '+yc2+' yes / '+nc2+' no';
+      row.appendChild(pr);
+    }
+    cont.appendChild(row);
+    if(!isElim){
+      const tb=document.createElement('div');
+      tb.className='timerbar';tb.id='tmr-'+color;
+      tb.innerHTML='<div class="tbtrack"><div class="tbfill '+color+'" style="width:100%"></div></div><span class="tbtime">5:00</span>';
+      cont.appendChild(tb);
+    }
+  });
+  updTimers();
+}
+
+function showWin(team){
+  SFX.victory();
+  const el=document.getElementById('td');
+  el.textContent='\uD83C\uDFC6 TEAM '+team+' WINS!';el.style.color='#ffe680';el.style.fontSize='16px';
+  sysChat('\uD83C\uDFC6 TEAM '+team+' WINS!');
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// SOUND ENGINE — hyper-realistic wooden chess board sounds
+// Technique: filtered white noise + body resonance + click transient
+// Models: pick-up click, air-thump, wood-on-wood, hollow-body ring
+// ════════════════════════════════════════════════════════════════
+const SFX=(()=>{
+  let C=null;
+  const ac=()=>{ if(!C)C=new(window.AudioContext||window.webkitAudioContext)(); if(C.state==='suspended')C.resume(); return C; };
+  const G=(v)=>{ const g=ac().createGain(); g.gain.value=v; g.connect(ac().destination); return g; };
+
+  // === CORE: realistic wooden thud ===
+  // attack  = short high-freq click (fingernail/edge impact)
+  // body    = bandpass noise in 300-900Hz (hollow wood resonance)
+  // thump   = low-freq sine (mass hitting board)
+  function woodThud(t, vol, pitch, dur, dest){
+    const sr=ac().sampleRate;
+    // --- attack click: very short broadband burst ---
+    const cBuf=ac().createBuffer(1,Math.ceil(sr*0.008),sr);
+    const cD=cBuf.getChannelData(0);
+    for(let i=0;i<cD.length;i++) cD[i]=(Math.random()*2-1)*Math.exp(-i/(sr*0.002));
+    const cSrc=ac().createBufferSource(); cSrc.buffer=cBuf;
+    const cGain=ac().createGain(); cGain.gain.setValueAtTime(vol*2.5,t); cGain.gain.exponentialRampToValueAtTime(0.0001,t+0.015);
+    cSrc.connect(cGain); cGain.connect(dest); cSrc.start(t);
+
+    // --- body resonance: bandpass noise, 2 layers ---
+    for(const [lo,hi,q,g2] of [[pitch*0.6,pitch*1.4,2.5,vol],[pitch*1.8,pitch*3,1.8,vol*0.4]]){
+      const bLen=Math.ceil(sr*dur);
+      const buf=ac().createBuffer(1,bLen,sr);
+      const d=buf.getChannelData(0);
+      // pre-bake decay envelope into noise
+      for(let i=0;i<bLen;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(sr*dur*0.55));
+      const src=ac().createBufferSource(); src.buffer=buf;
+      const bp=ac().createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=(lo+hi)/2; bp.Q.value=q;
+      const lp=ac().createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=hi;
+      const gn=ac().createGain(); gn.gain.setValueAtTime(g2,t+0.003); gn.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      src.connect(bp); bp.connect(lp); lp.connect(gn); gn.connect(dest); src.start(t+0.002);
+    }
+
+    // --- thump: short decaying sine (board bounce) ---
+    const osc=ac().createOscillator(); const og=ac().createGain();
+    osc.type='sine'; osc.frequency.setValueAtTime(pitch*0.35,t); osc.frequency.exponentialRampToValueAtTime(pitch*0.18,t+dur*0.5);
+    og.gain.setValueAtTime(vol*0.45,t+0.003); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.7);
+    osc.connect(og); og.connect(dest); osc.start(t); osc.stop(t+dur+0.05);
+  }
+
+  function ping(t,f,dur,vol,dest){
+    const o=ac().createOscillator(),g=ac().createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(vol,t); g.gain.setTargetAtTime(0,t+dur*0.15,dur*0.22);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t+dur+0.1);
+  }
+
+  return {
+    // Quiet piece lift + solid landing — like sliding a rook on a wooden board
+    move(){
+      const m=G(0.8), t=ac().currentTime;
+      // tiny pick-up tap
+      woodThud(t,      0.25, 1400, 0.04, m);
+      // landing thud — the main "clonk"
+      woodThud(t+0.06, 1.0,  720,  0.18, m);
+    },
+
+    // Heavier — capturing piece has more weight, displaced piece rattles
+    capture(){
+      const m=G(0.9), t=ac().currentTime;
+      woodThud(t,      1.3,  600,  0.22, m); // heavy landing
+      woodThud(t+0.06, 0.5,  1100, 0.08, m); // captured piece bouncing off
+      woodThud(t+0.12, 0.3,  850,  0.06, m); // settling
+    },
+
+    // Castle: king slid + rook placed separately
+    castle(){
+      const m=G(0.75), t=ac().currentTime;
+      woodThud(t,      0.6,  800,  0.14, m); // king lands
+      woodThud(t+0.22, 0.8,  650,  0.14, m); // rook lands
+    },
+
+    // Gentle 2-note wooden xylophone tap — your turn notification
+    yourTurn(){
+      const m=G(0.4), t=ac().currentTime;
+      woodThud(t,      0.3, 1800, 0.06, m);
+      woodThud(t+0.15, 0.3, 2200, 0.06, m);
+      ping(t+0.02, 880, 0.35, 0.2, m);
+      ping(t+0.17, 1175, 0.4, 0.15, m);
+    },
+
+    // Pieces knocked over and scattered — multiple irregular thumps
+    eliminate(){
+      const m=G(0.85), t=ac().currentTime;
+      woodThud(t,      1.2,  450,  0.35, m);
+      woodThud(t+0.08, 0.7,  700,  0.18, m);
+      woodThud(t+0.18, 0.5,  900,  0.12, m);
+      woodThud(t+0.28, 0.35, 1100, 0.08, m);
+      woodThud(t+0.36, 0.25, 800,  0.06, m);
+    },
+
+    // Setting up the board: rapid series of pieces being placed
+    join(){
+      const m=G(0.55), t=ac().currentTime;
+      const offsets=[0,0.07,0.13,0.19,0.24,0.29,0.34,0.38];
+      const pitches=[900,1100,800,1300,700,1050,950,1200];
+      offsets.forEach((dt,i)=>woodThud(t+dt, 0.5+i*0.04, pitches[i], 0.07, m));
+      // Cheerful pair of taps at end
+      [523,784].forEach((f,i)=>ping(t+0.5+i*0.14, f, 0.5, 0.22, m));
+    },
+
+    // Victory: celebration knocks then melody
+    victory(){
+      const m=G(0.65), t=ac().currentTime;
+      [0,0.05,0.10,0.16].forEach(dt=>woodThud(t+dt,0.8,1000,0.07,m));
+      const mel=[392,523,659,784,880,1047];
+      mel.forEach((f,i)=>ping(t+0.28+i*0.13,f,0.4,0.22,m));
+      [784,988,1175].forEach(f=>ping(t+1.15,f,1.0,0.15,m));
+    },
+
+    // Low warning knock when timer is almost out
+    lowTime(){
+      const m=G(0.5), t=ac().currentTime;
+      woodThud(t, 0.6, 500, 0.1, m);
+    },
+  };
+})();
+
+
+// ════════════════════════════════════════════════════════════════
+// VOICE CHAT — WebRTC audio between allies only
+// Key fixes:
+//  1. ICE candidates queued until remote description is set
+//  2. Old Firebase RTC data cleared on init (prevents stale signals)
+//  3. Strict signaling-state guards to prevent double-processing
+//  4. Mic requested on first button click if not yet granted
+// ════════════════════════════════════════════════════════════════
+let _localStream=null, _peerConn=null, _vcAlly=null, _micOn=false, _vcPair=null;
+let _remoteDescSet=false;   // true once setRemoteDescription has succeeded
+let _icePendingQueue=[];    // ICE candidates buffered before remote desc is set
+let _addedIceKeys=new Set();// Firebase push-key dedup
+
+const STUN_CFG={iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'stun:stun3.l.google.com:19302'},
+]};
+
+function vcPairKey(a,b){return[a,b].sort().join('_');}
+
+// Drain pending ICE queue after remote desc is applied
+async function _drainIce(){
+  _remoteDescSet=true;
+  for(const c of _icePendingQueue){
+    try{await _peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){}
+  }
+  _icePendingQueue=[];
+}
+
+async function initVoiceChat(){
+  try{
+    _vcAlly=COLORS.find(c=>TEAMS[c]===TEAMS[myColor]&&c!==myColor);
+    if(!_vcAlly){updVCUI();return;}
+    _vcPair=vcPairKey(myColor,_vcAlly);
+
+    // Clear stale RTC signals from Firebase so fresh handshake starts clean
+    if(roomId){
+      try{ await set(ref(db2,`rooms/${roomId}/rtc/${_vcPair}`),null); }catch(e){}
+    }
+    // Reset state
+    _remoteDescSet=false; _icePendingQueue=[]; _addedIceKeys=new Set();
+
+    // Request mic (silently skip if denied — user can click mic button later)
+    if(navigator.mediaDevices?.getUserMedia){
+      try{
+        _localStream=await navigator.mediaDevices.getUserMedia({
+          audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+          video:false
+        });
+        _localStream.getTracks().forEach(t=>{t.enabled=false;}); // start muted
+      }catch(e){
+        console.warn('Mic unavailable:',e.name,'(user can click 🎤 to retry)');
+        _localStream=null;
+      }
+    }
+
+    _vcSetupPeer();
+    _listenVCSignal();
+
+    // Offerer = alphabetically first in pair key (deterministic, same result on both sides)
+    const isOfferer=myColor===_vcPair.split('_')[0];
+    if(isOfferer) setTimeout(_vcOffer, 1800); // slight delay so answerer is listening
+    updVCUI();
+  }catch(e){console.warn('Voice chat init error:',e);}
+}
+
+function _vcSetupPeer(){
+  if(_peerConn){try{_peerConn.close();}catch(e){}}
+  _peerConn=new RTCPeerConnection(STUN_CFG);
+
+  // Add local tracks if mic is available
+  if(_localStream) _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
+
+  // Receive remote audio stream
+  _peerConn.ontrack=e=>{
+    try{
+      let a=document.getElementById('vc-audio');
+      if(!a){a=document.createElement('audio');a.id='vc-audio';a.autoplay=true;document.body.appendChild(a);}
+      a.srcObject=e.streams[0];
+      updVCUI(true);
+    }catch(e2){}
+  };
+
+  // Send ICE candidates to Firebase
+  _peerConn.onicecandidate=async e=>{
+    if(!e.candidate||!_vcPair||!roomId)return;
+    try{await push(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${myColor}`),e.candidate.toJSON());}catch(e2){}
+  };
+
+  _peerConn.onconnectionstatechange=()=>{
+    const s=_peerConn?.connectionState;
+    updVCUI(s==='connected');
+    if(s==='failed'){
+      console.warn('WebRTC connection failed — retrying in 4s');
+      setTimeout(initVoiceChat,4000);
+    }
+  };
+}
+
+async function _vcOffer(){
+  if(!_peerConn||!_vcPair||!roomId)return;
+  if(_peerConn.signalingState!=='stable'){return;} // already in progress
+  try{
+    const offer=await _peerConn.createOffer({offerToReceiveAudio:true});
+    await _peerConn.setLocalDescription(offer);
+    await set(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/offer`),
+      {type:offer.type,sdp:offer.sdp,ts:Date.now()});
+  }catch(e){console.warn('VC offer error:',e);}
+}
+
+function _listenVCSignal(){
+  if(!_vcPair||!roomId)return;
+  const isOfferer=myColor===_vcPair.split('_')[0];
+
+  if(!isOfferer){
+    // Answerer: wait for offer, then reply with answer
+    onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/offer`),async snap=>{
+      if(!snap.exists()||!_peerConn)return;
+      if(_peerConn.signalingState!=='stable')return; // guard against double-process
+      try{
+        await _peerConn.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        await _drainIce();
+        const ans=await _peerConn.createAnswer();
+        await _peerConn.setLocalDescription(ans);
+        await set(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/answer`),
+          {type:ans.type,sdp:ans.sdp,ts:Date.now()});
+      }catch(e){console.warn('VC answer error:',e);}
+    });
+  } else {
+    // Offerer: wait for answer
+    onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/answer`),async snap=>{
+      if(!snap.exists()||!_peerConn)return;
+      if(_peerConn.signalingState!=='have-local-offer')return;
+      try{
+        await _peerConn.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        await _drainIce();
+      }catch(e){console.warn('VC set-answer error:',e);}
+    });
+  }
+
+  // Both sides: receive and apply remote ICE candidates
+  onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${_vcAlly}`),snap=>{
+    if(!snap.exists()||!_peerConn)return;
+    Object.entries(snap.val()).forEach(async([k,c])=>{
+      if(_addedIceKeys.has(k))return;
+      _addedIceKeys.add(k);
+      if(_remoteDescSet){
+        try{await _peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){}
+      } else {
+        _icePendingQueue.push(c); // buffer until remote desc is ready
+      }
+    });
+  });
+}
+
+function toggleMic(){
+  // If mic not yet acquired, request it now
+  if(!_localStream){
+    if(!navigator.mediaDevices?.getUserMedia){
+      showToast('Voice chat needs HTTPS — works on GitHub Pages');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({audio:true,video:false})
+      .then(s=>{
+        _localStream=s;
+        _micOn=true;
+        _localStream.getTracks().forEach(t=>{t.enabled=true;});
+        // Add tracks to existing peer connection if already set up
+        if(_peerConn&&_peerConn.signalingState!=='closed')
+          s.getTracks().forEach(t=>_peerConn.addTrack(t,s));
+        updVCUI();
+        SFX.move();
+        showToast('Microphone on!');
+      })
+      .catch(err=>{
+        const msg=err.name==='NotAllowedError'?'Mic access denied — allow it in browser settings'
+                 :err.name==='NotFoundError'?'No microphone found'
+                 :'Mic error: '+err.message;
+        showToast(msg);
+      });
+    return;
+  }
+  _micOn=!_micOn;
+  _localStream.getTracks().forEach(t=>{t.enabled=_micOn;});
+  updVCUI();
+  if(_micOn){SFX.move();showToast('Mic on 🎙');}
+  else{SFX.castle();showToast('Mic muted 🔇');}
+}
+
+function updVCUI(connected){
+  const btn=document.getElementById('micbtn');
+  const peerEl=document.getElementById('vcp');
+  if(!btn)return;
+  if(_micOn){
+    btn.textContent='🎙️';btn.className='micbtn speaking';
+    btn.title='Mic ON — click to mute';
+  } else {
+    btn.textContent='🎤';btn.className='micbtn muted';
+    btn.title=_localStream?'Mic muted — click to unmute':'Click to enable microphone';
+  }
+  if(peerEl&&_vcAlly&&GS){
+    const nm=GS.players?.[_vcAlly]?.name||(PIECE_COLORS[_vcAlly]?.label||_vcAlly);
+    peerEl.innerHTML=(connected
+      ?'<span class="vcpeer-dot live"></span>'
+      :'<span class="vcpeer-dot"></span>')
+      +`<span style="color:#7080a0;font-size:9px">${esc(nm)}</span>`;
+  }
+}
+
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
 </body>
 </html>
