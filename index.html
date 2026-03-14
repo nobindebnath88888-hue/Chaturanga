@@ -416,7 +416,7 @@ function initBoard(){
   // Green top-left  (rows 0-1, cols 0-3): R N Q K, Bishop in front of K, scattered pawns
   P(0,0,'R','green'); P(0,1,'N','green'); P(0,2,'Q','green'); P(0,3,'K','green');
   P(1,3,'B','green'); P(1,2,'P','green');
-  P(2,0,'P','green'); P(2,3,'P','green');
+  P(2,1,'P','green'); P(2,3,'P','green');
   P(3,0,'P','green');
   // Blue  top-right  (rows 0-1, cols 4-7): K Q N R, Bishop in front of K, scattered pawns
   P(0,4,'K','blue'); P(0,5,'Q','blue'); P(0,6,'N','blue'); P(0,7,'R','blue');
@@ -1627,26 +1627,30 @@ const SFX=(()=>{
 
 // ════════════════════════════════════════════════════════════════
 // VOICE CHAT — WebRTC audio between allies only
-// Key fixes:
+// Fixes:
 //  1. ICE candidates queued until remote description is set
-//  2. Old Firebase RTC data cleared on init (prevents stale signals)
-//  3. Strict signaling-state guards to prevent double-processing
-//  4. Mic requested on first button click if not yet granted
+//  2. Only clear OWN ice slot on init (not entire pair path — avoids
+//     race condition where both players wipe each other's offer)
+//  3. onValue listeners tracked and detached on reconnect
+//  4. Late mic track addition triggers renegotiation offer
+//  5. Strict signaling-state guards throughout
 // ════════════════════════════════════════════════════════════════
 let _localStream=null, _peerConn=null, _vcAlly=null, _micOn=false, _vcPair=null;
-let _remoteDescSet=false;   // true once setRemoteDescription has succeeded
-let _icePendingQueue=[];    // ICE candidates buffered before remote desc is set
-let _addedIceKeys=new Set();// Firebase push-key dedup
+let _remoteDescSet=false;    // true once setRemoteDescription succeeded
+let _icePendingQueue=[];     // ICE candidates buffered before remote desc is set
+let _addedIceKeys=new Set(); // Firebase push-key dedup
+let _vcUnsubs=[];            // Firebase onValue unsubscribe functions
 
 const STUN_CFG={iceServers:[
   {urls:'stun:stun.l.google.com:19302'},
   {urls:'stun:stun2.l.google.com:19302'},
   {urls:'stun:stun3.l.google.com:19302'},
+  {urls:'stun:stun4.l.google.com:19302'},
 ]};
 
 function vcPairKey(a,b){return[a,b].sort().join('_');}
 
-// Drain pending ICE queue after remote desc is applied
+// Drain ICE queue after remote description is applied
 async function _drainIce(){
   _remoteDescSet=true;
   for(const c of _icePendingQueue){
@@ -1655,21 +1659,32 @@ async function _drainIce(){
   _icePendingQueue=[];
 }
 
+// Detach all active Firebase VC listeners
+function _vcDetachListeners(){
+  _vcUnsubs.forEach(fn=>{try{fn();}catch(e){}});
+  _vcUnsubs=[];
+}
+
 async function initVoiceChat(){
   try{
     _vcAlly=COLORS.find(c=>TEAMS[c]===TEAMS[myColor]&&c!==myColor);
     if(!_vcAlly){updVCUI();return;}
     _vcPair=vcPairKey(myColor,_vcAlly);
 
-    // Clear stale RTC signals from Firebase so fresh handshake starts clean
+    // FIX: only clear OWN ICE slot — never touch offer/answer or ally's ICE
+    // (both players clearing the full pair path was a race that wiped each other's offer)
     if(roomId){
-      try{ await set(ref(db2,`rooms/${roomId}/rtc/${_vcPair}`),null); }catch(e){}
+      try{ await set(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${myColor}`),null); }catch(e){}
     }
-    // Reset state
+
+    // Detach stale listeners before re-registering
+    _vcDetachListeners();
+
+    // Reset handshake state
     _remoteDescSet=false; _icePendingQueue=[]; _addedIceKeys=new Set();
 
-    // Request mic (silently skip if denied — user can click mic button later)
-    if(navigator.mediaDevices?.getUserMedia){
+    // Request mic quietly — user can also click the button later
+    if(!_localStream && navigator.mediaDevices?.getUserMedia){
       try{
         _localStream=await navigator.mediaDevices.getUserMedia({
           audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
@@ -1677,7 +1692,7 @@ async function initVoiceChat(){
         });
         _localStream.getTracks().forEach(t=>{t.enabled=false;}); // start muted
       }catch(e){
-        console.warn('Mic unavailable:',e.name,'(user can click 🎤 to retry)');
+        console.warn('Mic unavailable:',e.name,'— user can click 🎤 to retry');
         _localStream=null;
       }
     }
@@ -1685,9 +1700,9 @@ async function initVoiceChat(){
     _vcSetupPeer();
     _listenVCSignal();
 
-    // Offerer = alphabetically first in pair key (deterministic, same result on both sides)
+    // Offerer = alphabetically first colour in the pair key (same result on both sides)
     const isOfferer=myColor===_vcPair.split('_')[0];
-    if(isOfferer) setTimeout(_vcOffer, 1800); // slight delay so answerer is listening
+    if(isOfferer) setTimeout(_vcOffer, 1800); // slight delay so answerer is listening first
     updVCUI();
   }catch(e){console.warn('Voice chat init error:',e);}
 }
@@ -1696,20 +1711,26 @@ function _vcSetupPeer(){
   if(_peerConn){try{_peerConn.close();}catch(e){}}
   _peerConn=new RTCPeerConnection(STUN_CFG);
 
-  // Add local tracks if mic is available
+  // Add local tracks if mic is already available
   if(_localStream) _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
 
-  // Receive remote audio stream
+  // Play incoming audio from ally
   _peerConn.ontrack=e=>{
     try{
       let a=document.getElementById('vc-audio');
-      if(!a){a=document.createElement('audio');a.id='vc-audio';a.autoplay=true;document.body.appendChild(a);}
+      if(!a){
+        a=document.createElement('audio');
+        a.id='vc-audio';
+        a.autoplay=true;
+        a.playsInline=true;
+        document.body.appendChild(a);
+      }
       a.srcObject=e.streams[0];
       updVCUI(true);
-    }catch(e2){}
+    }catch(e2){console.warn('VC ontrack error:',e2);}
   };
 
-  // Send ICE candidates to Firebase
+  // Push our ICE candidates to Firebase
   _peerConn.onicecandidate=async e=>{
     if(!e.candidate||!_vcPair||!roomId)return;
     try{await push(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${myColor}`),e.candidate.toJSON());}catch(e2){}
@@ -1717,17 +1738,24 @@ function _vcSetupPeer(){
 
   _peerConn.onconnectionstatechange=()=>{
     const s=_peerConn?.connectionState;
-    updVCUI(s==='connected');
-    if(s==='failed'){
-      console.warn('WebRTC connection failed — retrying in 4s');
-      setTimeout(initVoiceChat,4000);
+    if(s==='connected') updVCUI(true);
+    else if(s==='disconnected'||s==='closed') updVCUI(false);
+    else if(s==='failed'){
+      console.warn('WebRTC failed — retrying in 5s');
+      setTimeout(initVoiceChat, 5000);
     }
+  };
+
+  // Triggered when local tracks are added after initial setup (late mic grant)
+  _peerConn.onnegotiationneeded=async()=>{
+    const isOfferer=myColor===_vcPair?.split('_')[0];
+    if(isOfferer) await _vcOffer();
   };
 }
 
 async function _vcOffer(){
   if(!_peerConn||!_vcPair||!roomId)return;
-  if(_peerConn.signalingState!=='stable'){return;} // already in progress
+  if(_peerConn.signalingState!=='stable')return; // guard: don't re-offer mid-handshake
   try{
     const offer=await _peerConn.createOffer({offerToReceiveAudio:true});
     await _peerConn.setLocalDescription(offer);
@@ -1741,12 +1769,15 @@ function _listenVCSignal(){
   const isOfferer=myColor===_vcPair.split('_')[0];
 
   if(!isOfferer){
-    // Answerer: wait for offer, then reply with answer
-    onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/offer`),async snap=>{
+    // Answerer: listen for offer → send answer
+    const unsub=onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/offer`),async snap=>{
       if(!snap.exists()||!_peerConn)return;
-      if(_peerConn.signalingState!=='stable')return; // guard against double-process
+      if(_peerConn.signalingState!=='stable')return;
+      const data=snap.val();
+      // Ignore old/stale offers (ts must be recent)
+      if(data.ts&&Date.now()-data.ts>30000)return;
       try{
-        await _peerConn.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        await _peerConn.setRemoteDescription(new RTCSessionDescription(data));
         await _drainIce();
         const ans=await _peerConn.createAnswer();
         await _peerConn.setLocalDescription(ans);
@@ -1754,9 +1785,10 @@ function _listenVCSignal(){
           {type:ans.type,sdp:ans.sdp,ts:Date.now()});
       }catch(e){console.warn('VC answer error:',e);}
     });
+    _vcUnsubs.push(unsub);
   } else {
-    // Offerer: wait for answer
-    onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/answer`),async snap=>{
+    // Offerer: listen for answer
+    const unsub=onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/answer`),async snap=>{
       if(!snap.exists()||!_peerConn)return;
       if(_peerConn.signalingState!=='have-local-offer')return;
       try{
@@ -1764,10 +1796,11 @@ function _listenVCSignal(){
         await _drainIce();
       }catch(e){console.warn('VC set-answer error:',e);}
     });
+    _vcUnsubs.push(unsub);
   }
 
-  // Both sides: receive and apply remote ICE candidates
-  onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${_vcAlly}`),snap=>{
+  // Both sides: apply incoming ICE candidates from ally
+  const iceUnsub=onValue(ref(db2,`rooms/${roomId}/rtc/${_vcPair}/ice_${_vcAlly}`),snap=>{
     if(!snap.exists()||!_peerConn)return;
     Object.entries(snap.val()).forEach(async([k,c])=>{
       if(_addedIceKeys.has(k))return;
@@ -1775,14 +1808,15 @@ function _listenVCSignal(){
       if(_remoteDescSet){
         try{await _peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){}
       } else {
-        _icePendingQueue.push(c); // buffer until remote desc is ready
+        _icePendingQueue.push(c); // buffer until setRemoteDescription completes
       }
     });
   });
+  _vcUnsubs.push(iceUnsub);
 }
 
 function toggleMic(){
-  // If mic not yet acquired, request it now
+  // First click: request microphone permission
   if(!_localStream){
     if(!navigator.mediaDevices?.getUserMedia){
       showToast('Voice chat needs HTTPS — works on GitHub Pages');
@@ -1793,12 +1827,12 @@ function toggleMic(){
         _localStream=s;
         _micOn=true;
         _localStream.getTracks().forEach(t=>{t.enabled=true;});
-        // Add tracks to existing peer connection if already set up
+        // Add tracks to existing peer connection — onnegotiationneeded fires automatically
         if(_peerConn&&_peerConn.signalingState!=='closed')
           s.getTracks().forEach(t=>_peerConn.addTrack(t,s));
         updVCUI();
         SFX.move();
-        showToast('Microphone on!');
+        showToast('Microphone on! 🎙');
       })
       .catch(err=>{
         const msg=err.name==='NotAllowedError'?'Mic access denied — allow it in browser settings'
@@ -1808,6 +1842,7 @@ function toggleMic(){
       });
     return;
   }
+  // Subsequent clicks: toggle mute
   _micOn=!_micOn;
   _localStream.getTracks().forEach(t=>{t.enabled=_micOn;});
   updVCUI();
