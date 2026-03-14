@@ -1643,12 +1643,32 @@ let _icePendingQueue=[];
 let _addedIceKeys=new Set();
 let _vcUnsubs=[];
 
-const STUN_CFG={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun2.l.google.com:19302'},
-  {urls:'stun:stun3.l.google.com:19302'},
-  {urls:'stun:stun4.l.google.com:19302'},
-]};
+// ICE config — STUN + TURN for cross-device reliability.
+// STUN discovers public IP but can't relay. Across real devices on different
+// networks (home/mobile NAT), direct P2P almost always fails without TURN.
+// OpenRelay = free public TURN, no API key needed.
+const STUN_CFG={
+  iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:3478'},
+    {urls:'stun:stun2.l.google.com:19302'},
+    {urls:'stun:stun3.l.google.com:3478'},
+    // TURN relay — UDP port 80 passes most firewalls
+    {urls:'turn:openrelay.metered.ca:80',
+     username:'openrelayproject',credential:'openrelayproject'},
+    // TURN relay — UDP 443
+    {urls:'turn:openrelay.metered.ca:443',
+     username:'openrelayproject',credential:'openrelayproject'},
+    // TURN over TCP — when UDP is fully blocked
+    {urls:'turn:openrelay.metered.ca:443?transport=tcp',
+     username:'openrelayproject',credential:'openrelayproject'},
+    // TURNS (TLS) — for restrictive corporate/school networks
+    {urls:'turns:openrelay.metered.ca:443',
+     username:'openrelayproject',credential:'openrelayproject'},
+  ],
+  iceTransportPolicy:'all',
+  iceCandidatePoolSize:10,
+};
 
 function vcPairKey(a,b){return[a,b].sort().join('_');}
 
