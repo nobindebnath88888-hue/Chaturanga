@@ -288,14 +288,14 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getDatabase,ref,set,get,push,onValue,update,remove}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const FB={
-  apiKey: "AIzaSyApNYVFMJXejUINjpioP4fh6s0KOjcFWc0",
-  authDomain: "chaturanga-2.firebaseapp.com",
-  databaseURL: "https://chaturanga-2-default-rtdb.firebaseio.com",
-  projectId: "chaturanga-2",
-  storageBucket: "chaturanga-2.firebasestorage.app",
-  messagingSenderId: "223844496743",
-  appId: "1:223844496743:web:b44cc79fa1d9baf2606bc2",
-  measurementId: "G-CKV7TNQYF3"
+  apiKey:"AIzaSyApNYVFMJXejUINjpioP4fh6s0KOjcFWc0",
+  authDomain:"chaturanga-2.firebaseapp.com",
+  databaseURL:"https://chaturanga-2-default-rtdb.firebaseio.com",
+  projectId:"chaturanga-2",
+  storageBucket:"chaturanga-2.firebasestorage.app",
+  messagingSenderId:"223844496743",
+  appId:"1:223844496743:web:b44cc79fa1d9baf2606bc2",
+  measurementId:"G-CKV7TNQYF3"
 };
 
 // ── Constants ─────────────────────────────────────────────────────
@@ -306,9 +306,11 @@ const TEAMS={red:'A',gold:'A',blue:'B',green:'B'};
 // Index into this array gives turn order, skipping eliminated players
 const TURN_ORDER=['red','blue','gold','green'];
 
-const PAWN_DIR  ={red:-1,blue:-1,green:1,gold:1};
-const PAWN_PROMO={red:0,  blue:0, green:7,gold:7};
-const PAWN_START={red:6,  blue:6, green:1,gold:1};
+// Red+Gold at BOTTOM (rows 6-7) → move UP (dir=-1), promote at row 0, start row 6
+// Blue+Green at TOP  (rows 0-1) → move DOWN (dir=+1), promote at row 7, start row 1
+const PAWN_DIR  ={red:-1, blue:1,  green:1,  gold:-1};
+const PAWN_PROMO={red:0,  blue:7,  green:7,  gold:0};
+const PAWN_START={red:6,  blue:1,  green:1,  gold:6};
 
 // King starting squares for castling reference
 // Red: King at (7,3), Rooks at (7,0) [already Boat] and... wait —
@@ -397,29 +399,30 @@ let _boardThemeIdx = 0; // default: Glass
 function initBoard(){
   const b=Array(64).fill(null);
   const P=(r,c,t,co)=>{b[r*8+c]={type:t,color:co}};
-  // NEW LAYOUT — Queens in back rank (replace Bishops), Bishops pushed forward,
-  // pawns in a spread opening formation matching the new piece arrangement.
+  // SAME-SIDE TEAM LAYOUT
+  // Team A (Red + Gold) at the BOTTOM — both facing UP toward row 0
+  // Team B (Green + Blue) at the TOP  — both facing DOWN toward row 7
   //
-  // Gold  top-left  : R(0,0) N(0,1) Q(0,2) K(0,3)   Bishop → row1 in front of King
-  P(0,0,'R','gold'); P(0,1,'N','gold'); P(0,2,'Q','gold'); P(0,3,'K','gold');
-  P(1,3,'B','gold'); P(1,2,'P','gold');       // Bishop + pawn in row 1
-  P(2,0,'P','gold'); P(2,3,'P','gold');        // pawns advanced in row 2
-  P(3,0,'P','gold');                           // lone flank pawn row 3
-  // Green top-right : K(0,4) Q(0,5) N(0,6) R(0,7)   Bishop → row1 in front of King
-  P(0,4,'K','green'); P(0,5,'Q','green'); P(0,6,'N','green'); P(0,7,'R','green');
-  P(1,4,'B','green'); P(1,5,'P','green');      // Bishop + pawn in row 1
-  P(2,4,'P','green'); P(2,6,'P','green');      // pawns advanced in row 2
-  P(3,7,'P','green');                          // lone flank pawn row 3
-  // Red   bottom-left : R(7,0) N(7,1) Q(7,2) K(7,3)  Bishop → row6 in front of King
+  // Red   bottom-left  (rows 6-7, cols 0-3): R N Q K, Bishop in front of K, scattered pawns
   P(7,0,'R','red'); P(7,1,'N','red'); P(7,2,'Q','red'); P(7,3,'K','red');
-  P(6,3,'B','red'); P(6,2,'P','red');          // Bishop + pawn in row 6
-  P(5,1,'P','red'); P(5,3,'P','red');          // pawns advanced in row 5
-  P(4,0,'P','red');                            // lone flank pawn row 4
-  // Blue  bottom-right: K(7,4) Q(7,5) N(7,6) R(7,7)  Bishop → row6 in front of King
-  P(7,4,'K','blue'); P(7,5,'Q','blue'); P(7,6,'N','blue'); P(7,7,'R','blue');
-  P(6,4,'B','blue'); P(6,5,'P','blue');        // Bishop + pawn in row 6
-  P(5,4,'P','blue'); P(5,6,'P','blue');        // pawns advanced in row 5
-  P(4,7,'P','blue');                           // lone flank pawn row 4
+  P(6,3,'B','red'); P(6,2,'P','red');
+  P(5,1,'P','red'); P(5,3,'P','red');
+  P(4,0,'P','red');
+  // Gold  bottom-right (rows 6-7, cols 4-7): K Q N R, Bishop in front of K, scattered pawns
+  P(7,4,'K','gold'); P(7,5,'Q','gold'); P(7,6,'N','gold'); P(7,7,'R','gold');
+  P(6,4,'B','gold'); P(6,5,'P','gold');
+  P(5,4,'P','gold'); P(5,6,'P','gold');
+  P(4,7,'P','gold');
+  // Green top-left  (rows 0-1, cols 0-3): R N Q K, Bishop in front of K, scattered pawns
+  P(0,0,'R','green'); P(0,1,'N','green'); P(0,2,'Q','green'); P(0,3,'K','green');
+  P(1,3,'B','green'); P(1,2,'P','green');
+  P(2,0,'P','green'); P(2,3,'P','green');
+  P(3,0,'P','green');
+  // Blue  top-right  (rows 0-1, cols 4-7): K Q N R, Bishop in front of K, scattered pawns
+  P(0,4,'K','blue'); P(0,5,'Q','blue'); P(0,6,'N','blue'); P(0,7,'R','blue');
+  P(1,4,'B','blue'); P(1,5,'P','blue');
+  P(2,4,'P','blue'); P(2,6,'P','blue');
+  P(3,7,'P','blue');
   return b;
 }
 
@@ -509,10 +512,12 @@ function genMoves(board,row,col,color,cr){
   else if(pc.type==='K'){
     [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>step(dr,dc));
     // Castling: king moves 2 squares toward the rook
-    // Red/Gold: King on left (col0 or col0), Rook toward right (col3) — king moves RIGHT (+col)
-    // Blue/Green: King on right (col7), Rook toward left (col4) — king moves LEFT (-col)
+    // Red   (bottom-left)  King col3, Rook col0 → moves LEFT  (dir=-1)
+    // Green (top-left)     King col3, Rook col0 → moves LEFT  (dir=-1)
+    // Gold  (bottom-right) King col4, Rook col7 → moves RIGHT (dir=+1)
+    // Blue  (top-right)    King col4, Rook col7 → moves RIGHT (dir=+1)
     if(cr&&cr[color]&&cr[color].K){
-      const dir=(color==='red'||color==='gold')?-1:1; // Red/Gold king at col3 castles LEFT; Blue/Green king at col4 castles RIGHT
+      const dir=(color==='red'||color==='green')?-1:1;
       const sq1=col+dir, sq2=col+dir*2, rookCol=col+dir*3;
       const inBounds=(c)=>c>=0&&c<=7;
       if(inBounds(sq1)&&inBounds(sq2)&&inBounds(rookCol)){
@@ -628,20 +633,22 @@ function deserCR(raw){
 }
 
 // ── Board View Transforms ─────────────────────────────────────────
-// b2d: board coords → display coords for given perspective
-// d2b: display coords → board coords
+// Red   (bottom-left):  no transform          — rows/cols as-is
+// Gold  (bottom-right): mirror columns        — [r, 7-c]
+// Green (top-left):     flip rows             — [7-r, c]
+// Blue  (top-right):    flip rows + cols      — [7-r, 7-c]
 function b2d(r,c,p){
-  if(p==='red')   return [r,   c  ];
-  if(p==='blue')  return [r,   7-c];
-  if(p==='green') return [7-r, 7-c];
-  if(p==='gold')  return [7-r, c  ];
+  if(p==='red')   return [r,     c  ];
+  if(p==='gold')  return [r,   7-c  ];
+  if(p==='green') return [7-r,   c  ];
+  if(p==='blue')  return [7-r, 7-c  ];
   return [r,c];
 }
 function d2b(dr,dc,p){
-  if(p==='red')   return [dr,   dc  ];
-  if(p==='blue')  return [dr,   7-dc];
-  if(p==='green') return [7-dr, 7-dc];
-  if(p==='gold')  return [7-dr, dc  ];
+  if(p==='red')   return [dr,     dc  ];
+  if(p==='gold')  return [dr,   7-dc  ];
+  if(p==='green') return [7-dr,   dc  ];
+  if(p==='blue')  return [7-dr, 7-dc  ];
   return [dr,dc];
 }
 
@@ -933,10 +940,14 @@ function paint(){
 // for each perspective.  Format: {tl, tr, bl, br}
 const CORNER_CLASS={red:'black-p',blue:'white-p',green:'silver-p',gold:'gold-p'};
 const PERSP_CORNERS={
-  red:  {tl:'gold', tr:'green', bl:'red',   br:'blue'},
-  blue: {tl:'green',tr:'gold',  bl:'blue',  br:'red'},
-  green:{tl:'blue', tr:'red',   bl:'green', br:'gold'},
-  gold: {tl:'red',  tr:'blue',  bl:'gold',  br:'green'},
+  // Red (bottom-left view): Green=tl, Blue=tr, Red=bl, Gold=br
+  red:  {tl:'green', tr:'blue',  bl:'red',  br:'gold'},
+  // Gold (bottom-right, cols mirrored): Blue=tl, Green=tr, Gold=bl, Red=br
+  gold: {tl:'blue',  tr:'green', bl:'gold', br:'red'},
+  // Green (top-left, rows flipped): Red=tl, Gold=tr, Green=bl, Blue=br
+  green:{tl:'red',   tr:'gold',  bl:'green',br:'blue'},
+  // Blue (top-right, rows+cols flipped): Gold=tl, Red=tr, Blue=bl, Green=br
+  blue: {tl:'gold',  tr:'red',   bl:'blue', br:'green'},
 };
 
 function updCornerNames(){
